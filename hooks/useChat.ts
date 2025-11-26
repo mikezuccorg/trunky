@@ -100,14 +100,22 @@ export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
 
               try {
                 const parsed = JSON.parse(data);
+                if (parsed.error) {
+                  // Handle error from stream
+                  throw new Error(parsed.error);
+                }
                 if (parsed.text) {
                   assistantContent += parsed.text;
                   assistantMessage.content = assistantContent;
                   // Trigger re-render by calling onMessage with updated message
                   onMessage?.({ ...assistantMessage });
                 }
-              } catch (e) {
-                // Ignore parse errors for incomplete chunks
+              } catch (e: any) {
+                // If it's a structured error, throw it
+                if (e.message && !e.message.includes('JSON')) {
+                  throw e;
+                }
+                // Otherwise ignore parse errors for incomplete chunks
               }
             }
           }

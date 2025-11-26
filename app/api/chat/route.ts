@@ -25,11 +25,27 @@ export async function POST(req: NextRequest) {
       apiKey: apiKey,
     });
 
-    const stream = await anthropic.messages.stream({
-      model: model,
-      max_tokens: maxTokens,
-      messages: messages,
-    });
+    let stream;
+    try {
+      stream = await anthropic.messages.stream({
+        model: model,
+        max_tokens: maxTokens,
+        messages: messages,
+      });
+    } catch (streamError: any) {
+      // Handle errors that occur before streaming starts
+      console.error('Failed to create stream:', streamError);
+      return new Response(
+        JSON.stringify({
+          error: streamError.message || 'Failed to start chat stream',
+          details: streamError.error?.error?.message || streamError.error?.message || undefined
+        }),
+        {
+          status: streamError.status || 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
@@ -43,9 +59,14 @@ export async function POST(req: NextRequest) {
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
-        } catch (error) {
+        } catch (error: any) {
           console.error('Stream error:', error);
-          controller.error(error);
+          // Send error as SSE event before closing
+          const errorMessage = error.error?.error?.message || error.message || 'Stream error occurred';
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
+          );
+          controller.close();
         }
       },
     });
