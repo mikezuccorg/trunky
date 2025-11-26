@@ -20,7 +20,8 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
           ...conversationState.threads,
           [newThread.id]: newThread,
         },
-        activeThreadIds: [...conversationState.activeThreadIds, newThread.id],
+        activeThreadIds: [parentThreadId, newThread.id], // Show parent and new thread
+        currentThreadId: newThread.id, // Set new thread as current
       };
 
       setConversationState(updatedState);
@@ -31,22 +32,40 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     [conversationState, setConversationState]
   );
 
-  const closeThread = useCallback(
+  const navigateToThread = useCallback(
     (threadId: string) => {
-      if (threadId === conversationState.mainThreadId) {
-        // Can't close the main thread
-        return;
-      }
+      const thread = conversationState.threads[threadId];
+      if (!thread) return;
+
+      // Show the thread and its parent (if it has one)
+      const activeIds = thread.parentThreadId
+        ? [thread.parentThreadId, threadId]
+        : [threadId];
 
       const updatedState: ConversationState = {
         ...conversationState,
-        activeThreadIds: conversationState.activeThreadIds.filter((id) => id !== threadId),
+        activeThreadIds: activeIds,
+        currentThreadId: threadId,
       };
 
       setConversationState(updatedState);
       storage.saveConversations(updatedState);
     },
     [conversationState, setConversationState]
+  );
+
+  const closeThread = useCallback(
+    (threadId: string) => {
+      // Navigate to parent thread when closing current thread
+      const thread = conversationState.threads[threadId];
+      if (thread?.parentThreadId) {
+        navigateToThread(thread.parentThreadId);
+      } else {
+        // If no parent, go to main thread
+        navigateToThread(conversationState.mainThreadId);
+      }
+    },
+    [conversationState, navigateToThread]
   );
 
   const updateThread = useCallback(
@@ -65,12 +84,31 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     [conversationState, setConversationState]
   );
 
+  // Get all threads as a tree structure
+  const getAllThreads = useCallback(() => {
+    return Object.values(conversationState.threads);
+  }, [conversationState.threads]);
+
+  // Get child threads for a given thread
+  const getChildThreads = useCallback(
+    (threadId: string) => {
+      return Object.values(conversationState.threads).filter(
+        (t) => t.parentThreadId === threadId
+      );
+    },
+    [conversationState.threads]
+  );
+
   return {
     createNewThread,
     closeThread,
     updateThread,
+    navigateToThread,
+    getAllThreads,
+    getChildThreads,
     activeThreads: conversationState.activeThreadIds.map(
       (id) => conversationState.threads[id]
     ),
+    currentThreadId: conversationState.currentThreadId,
   };
 }

@@ -5,7 +5,9 @@ import { storage, createThread } from '@/lib/storage';
 import { ConversationState } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
 import { ThreadSelector } from '@/components/chat/ThreadSelector';
+import { ThreadTree } from '@/components/threading/ThreadTree';
 import { useThreads } from '@/hooks/useThreads';
+import { Network } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
@@ -19,6 +21,7 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
     messageId: string;
     threadId: string;
   } | null>(null);
+  const [showThreadTree, setShowThreadTree] = useState(false);
 
   // Initialize conversation state
   useEffect(() => {
@@ -34,6 +37,7 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
         },
         activeThreadIds: [mainThread.id],
         mainThreadId: mainThread.id,
+        currentThreadId: mainThread.id,
         apiKey: null,
       };
       setConversationState(initialState);
@@ -46,6 +50,7 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
     threads: {},
     activeThreadIds: [],
     mainThreadId: '',
+    currentThreadId: '',
     apiKey: null,
   };
 
@@ -81,14 +86,20 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
     );
   }
 
+  const allThreads = threading.getAllThreads();
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">Trunky</h1>
-          <span className="text-xs text-text-secondary">
-            {threading.activeThreads.length} thread{threading.activeThreads.length !== 1 ? 's' : ''}
-          </span>
+          <button
+            onClick={() => setShowThreadTree(!showThreadTree)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          >
+            <Network size={14} />
+            {allThreads.length} thread{allThreads.length !== 1 ? 's' : ''}
+          </button>
         </div>
         <button
           onClick={onClearApiKey}
@@ -110,6 +121,16 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
 
         {pendingSelection && (
           <ThreadSelector onCreateThread={handleCreateThread} />
+        )}
+
+        {showThreadTree && (
+          <ThreadTree
+            threads={allThreads}
+            mainThreadId={conversationState.mainThreadId}
+            currentThreadId={threading.currentThreadId}
+            onNavigate={threading.navigateToThread}
+            onClose={() => setShowThreadTree(false)}
+          />
         )}
       </main>
     </div>

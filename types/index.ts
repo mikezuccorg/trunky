@@ -22,6 +22,7 @@ export interface ConversationState {
   activeThreadIds: string[];
   mainThreadId: string;
   apiKey: string | null;
+  currentThreadId: string; // The thread currently being viewed (rightmost pane)
 }
 
 export interface ChatMessage {
