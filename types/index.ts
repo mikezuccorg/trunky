@@ -14,6 +14,7 @@ export interface Thread {
   messages: Message[];
   createdAt: number;
   title?: string;
+  highlightMessageId?: string; // Message to highlight in parent thread
 }
 
 export interface ConversationState {

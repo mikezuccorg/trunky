@@ -9,15 +9,25 @@ interface MessageListProps {
   messages: MessageType[];
   onTextSelect?: (text: string, messageId: string) => void;
   isLoading?: boolean;
+  highlightMessageId?: string;
+  highlightedText?: string;
 }
 
-export function MessageList({ messages, onTextSelect, isLoading }: MessageListProps) {
+export function MessageList({ messages, onTextSelect, isLoading, highlightMessageId, highlightedText }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const highlightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
+
+  // Scroll to highlighted message when it exists
+  useEffect(() => {
+    if (highlightMessageId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightMessageId]);
 
   if (messages.length === 0 && !isLoading) {
     return (
@@ -40,30 +50,35 @@ export function MessageList({ messages, onTextSelect, isLoading }: MessageListPr
       className="flex-1 overflow-y-auto"
     >
       <div className="max-w-4xl mx-auto">
-        {messages.map((message) => (
-          <Message
-            key={message.id}
-            message={message}
-            onTextSelect={onTextSelect}
-          />
-        ))}
+        {messages.map((message) => {
+          const isHighlighted = message.id === highlightMessageId;
+          return (
+            <div
+              key={message.id}
+              ref={isHighlighted ? highlightRef : undefined}
+            >
+              <Message
+                message={message}
+                onTextSelect={onTextSelect}
+                isHighlighted={isHighlighted}
+                highlightedText={isHighlighted ? highlightedText : undefined}
+              />
+            </div>
+          );
+        })}
         {isLoading && (
-          <div className="px-6 py-6 bg-assistant-message">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-3 text-text-primary">
-                  <Bot size={18} className="lucide lucide-bot" />
+          <div className="px-6 py-6 bg-background">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
+                  <Bot size={14} />
                 </div>
+                <span className="text-sm font-medium">Claude</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium">Claude</span>
-                </div>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>

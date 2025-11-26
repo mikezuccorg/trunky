@@ -24,6 +24,11 @@ export function ThreadManager({
   const visibleThreads = threads.slice(0, 4);
   const threadCount = visibleThreads.length;
 
+  // Get child threads for each visible thread
+  const getChildThreads = (threadId: string): Thread[] => {
+    return threads.filter((t) => t.parentThreadId === threadId);
+  };
+
   return (
     <div className="flex h-full w-full">
       {visibleThreads.map((thread) => (
@@ -46,6 +51,7 @@ export function ThreadManager({
                 : undefined
             }
             onTextSelect={onTextSelect}
+            childThreads={getChildThreads(thread.id)}
           />
         </div>
       ))}

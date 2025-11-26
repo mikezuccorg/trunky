@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
   apiKey: string;
   onUpdateThread: (thread: Thread) => void;
   onTextSelect?: (text: string, messageId: string, threadId: string) => void;
+  childThreads?: Thread[]; // Child threads spawned from this thread
 }
 
 export function ChatInterface({
@@ -19,6 +20,7 @@ export function ChatInterface({
   apiKey,
   onUpdateThread,
   onTextSelect,
+  childThreads = [],
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(thread.messages);
 
@@ -74,6 +76,25 @@ export function ChatInterface({
     }
   };
 
+  // Find which messages should be highlighted (if any child threads reference them)
+  const getHighlightForMessage = (messageId: string) => {
+    const childThread = childThreads.find(
+      (t) => t.parentMessageId === messageId && t.parentThreadId === thread.id
+    );
+    return childThread
+      ? { highlightedText: childThread.selectedText || '' }
+      : null;
+  };
+
+  // Find the first child thread to determine highlight (for simplicity, we'll highlight based on first active child)
+  const activeChildThread = childThreads[0];
+  const highlightInfo = activeChildThread?.parentThreadId === thread.id
+    ? {
+        messageId: activeChildThread.parentMessageId || undefined,
+        text: activeChildThread.selectedText || undefined,
+      }
+    : {};
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Thread header */}
@@ -93,6 +114,8 @@ export function ChatInterface({
         messages={messages}
         onTextSelect={handleTextSelect}
         isLoading={isLoading}
+        highlightMessageId={highlightInfo.messageId}
+        highlightedText={highlightInfo.text}
       />
 
       {/* Error display */}

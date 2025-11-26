@@ -2,14 +2,16 @@
 
 import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
-import { User, Bot } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 interface MessageProps {
   message: MessageType;
   onTextSelect?: (text: string, messageId: string) => void;
+  isHighlighted?: boolean;
+  highlightedText?: string;
 }
 
-export function Message({ message, onTextSelect }: MessageProps) {
+export function Message({ message, onTextSelect, isHighlighted, highlightedText }: MessageProps) {
   const isUser = message.role === 'user';
 
   const handleMouseUp = () => {
@@ -22,36 +24,60 @@ export function Message({ message, onTextSelect }: MessageProps) {
     }
   };
 
+  // Helper to render content with highlighted text
+  const renderContent = () => {
+    if (!isHighlighted || !highlightedText) {
+      return message.content;
+    }
+
+    const index = message.content.indexOf(highlightedText);
+    if (index === -1) {
+      return message.content;
+    }
+
+    const before = message.content.slice(0, index);
+    const highlighted = message.content.slice(index, index + highlightedText.length);
+    const after = message.content.slice(index + highlightedText.length);
+
+    return (
+      <>
+        {before}
+        <span className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+          {highlighted}
+        </span>
+        {after}
+      </>
+    );
+  };
+
   return (
     <div
-      className={`group flex gap-4 px-6 py-6 ${
-        isUser ? 'bg-user-message' : 'bg-assistant-message'
+      className={`group px-6 py-6 transition-colors bg-background border-b border-border/30 ${
+        isHighlighted ? 'ring-2 ring-highlight-border ring-inset' : ''
       }`}
       onMouseUp={handleMouseUp}
     >
-      <div className="flex-shrink-0">
-        <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            isUser ? 'bg-accent text-white' : 'bg-surface-3 text-text-primary'
-          }`}
-        >
-          {isUser ? <User size={18} /> : <Bot size={18} />}
-        </div>
-      </div>
+      <div className="max-w-3xl">
+        {!isUser && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
+              <Bot size={14} />
+            </div>
+            <span className="text-sm font-medium">Claude</span>
+          </div>
+        )}
 
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {isUser ? 'You' : 'Claude'}
-          </span>
-          <span className="text-xs text-text-secondary">
+        <div className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
+          isUser ? 'text-text-primary' : 'text-text-primary'
+        }`}>
+          {renderContent()}
+        </div>
+
+        {message.timestamp && (
+          <div className="mt-2 text-xs text-text-secondary">
             {formatTimestamp(message.timestamp)}
-          </span>
-        </div>
-
-        <div className="text-sm text-text-primary whitespace-pre-wrap break-words leading-relaxed">
-          {message.content}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
