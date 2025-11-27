@@ -3,6 +3,18 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+// Type for API errors
+interface ApiError {
+  message?: string;
+  status?: number;
+  error?: {
+    message?: string;
+    error?: {
+      message?: string;
+    };
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const {
@@ -33,6 +45,7 @@ export async function POST(req: NextRequest) {
 
     let stream;
     try {
+      // Type assertion needed because thinking property is not yet in SDK types
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const streamOptions: any = {
         model: model,
@@ -56,7 +69,7 @@ export async function POST(req: NextRequest) {
       stream = await anthropic.messages.stream(streamOptions);
     } catch (streamError: unknown) {
       // Handle errors that occur before streaming starts
-      const error = streamError as { message?: string; status?: number; error?: { error?: { message?: string }; message?: string } };
+      const error = streamError as ApiError;
       console.error('Failed to create stream:', streamError);
       return new Response(
         JSON.stringify({
@@ -99,7 +112,7 @@ export async function POST(req: NextRequest) {
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error: unknown) {
-          const streamError = error as { message?: string; error?: { error?: { message?: string } } };
+          const streamError = error as ApiError;
           console.error('Stream error:', error);
           // Send error as SSE event before closing
           const errorMessage = streamError.error?.error?.message || streamError.message || 'Stream error occurred';
@@ -119,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    const apiError = error as { message?: string; status?: number; error?: { message?: string } };
+    const apiError = error as ApiError;
     console.error('Chat API error:', error);
     return new Response(
       JSON.stringify({
