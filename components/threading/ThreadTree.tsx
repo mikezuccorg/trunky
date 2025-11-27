@@ -1,7 +1,7 @@
 'use client';
 
 import { Thread } from '@/types';
-import { getThreadTitle, truncateText } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 import { ChevronRight, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 

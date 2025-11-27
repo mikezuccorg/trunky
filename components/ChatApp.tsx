@@ -12,11 +12,10 @@ import { Network, Key } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
-  onClearApiKey: () => void;
   onUpdateApiKey: (newKey: string) => void;
 }
 
-export function ChatApp({ apiKey, onClearApiKey, onUpdateApiKey }: ChatAppProps) {
+export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
   const [conversationState, setConversationState] = useState<ConversationState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{
     text: string;

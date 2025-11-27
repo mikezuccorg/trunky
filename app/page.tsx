@@ -23,12 +23,6 @@ export default function Home() {
     }
   };
 
-  const handleClearApiKey = () => {
-    storage.clearApiKey();
-    setApiKey('');
-    setHasApiKey(false);
-  };
-
   const handleUpdateApiKey = (newKey: string) => {
     storage.saveApiKey(newKey);
     setApiKey(newKey);
@@ -82,7 +76,6 @@ export default function Home() {
   return (
     <ChatApp
       apiKey={apiKey}
-      onClearApiKey={handleClearApiKey}
       onUpdateApiKey={handleUpdateApiKey}
     />
   );
