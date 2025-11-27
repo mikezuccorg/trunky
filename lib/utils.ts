@@ -38,7 +38,17 @@ export function truncateText(text: string, maxLength: number): string {
   return text.slice(0, maxLength) + '...';
 }
 
-export function getThreadTitle(selectedText?: string): string {
-  if (!selectedText) return 'New Thread';
-  return truncateText(selectedText, 50);
+export function getThreadTitle(selectedText?: string, firstUserMessage?: string): string {
+  // If there's selected text (branched thread), use that
+  if (selectedText) {
+    return truncateText(selectedText, 50);
+  }
+
+  // If there's a first user message (main thread), use that
+  if (firstUserMessage) {
+    return truncateText(firstUserMessage, 50);
+  }
+
+  // Default fallback
+  return 'New Thread';
 }

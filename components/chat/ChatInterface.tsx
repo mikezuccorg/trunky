@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Message, Thread } from '@/types';
+import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 import { useChat } from '@/hooks/useChat';
@@ -23,6 +23,13 @@ export function ChatInterface({
   childThreads = [],
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(thread.messages);
+  const [settings, setSettings] = useState<ChatSettingsType>(
+    thread.settings || {
+      model: 'claude-3-5-sonnet-20241022',
+      maxTokens: 4096,
+      extendedThinking: false,
+    }
+  );
 
   // Update messages when thread changes
   useEffect(() => {
@@ -52,19 +59,31 @@ export function ChatInterface({
   const { sendMessage, isLoading, error } = useChat({
     threadId: thread.id,
     apiKey,
+    settings,
     onMessage: handleMessage,
   });
 
-  // Save messages to thread whenever they change
+  // Save messages and settings to thread whenever they change
   useEffect(() => {
     if (messages.length > 0 && messages !== thread.messages) {
       const updatedThread = {
         ...thread,
         messages,
+        settings,
       };
       onUpdateThread(updatedThread);
     }
-  }, [messages, thread, onUpdateThread]);
+  }, [messages, settings, thread, onUpdateThread]);
+
+  const handleSettingsChange = (newSettings: ChatSettingsType) => {
+    setSettings(newSettings);
+    // Update thread with new settings
+    const updatedThread = {
+      ...thread,
+      settings: newSettings,
+    };
+    onUpdateThread(updatedThread);
+  };
 
   const handleSend = async (content: string) => {
     await sendMessage(content, messages);
@@ -128,7 +147,12 @@ export function ChatInterface({
       )}
 
       {/* Input */}
-      <InputArea onSend={handleSend} disabled={isLoading} />
+      <InputArea
+        onSend={handleSend}
+        disabled={isLoading}
+        settings={settings}
+        onSettingsChange={handleSettingsChange}
+      />
     </div>
   );
 }

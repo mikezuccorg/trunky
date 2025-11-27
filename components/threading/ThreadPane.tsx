@@ -24,6 +24,9 @@ export function ThreadPane({
   onTextSelect,
   childThreads = [],
 }: ThreadPaneProps) {
+  // Get the first user message content for the title
+  const firstUserMessage = thread.messages.find(m => m.role === 'user')?.content;
+
   return (
     <div className="flex flex-col h-full border-r border-border last:border-r-0 animate-in slide-in-from-right duration-300">
       {/* Thread header */}
@@ -33,7 +36,7 @@ export function ThreadPane({
             <ChevronLeft size={16} className="text-text-secondary flex-shrink-0" />
           )}
           <h3 className="text-sm font-medium truncate">
-            {isMainThread ? 'Main Thread' : getThreadTitle(thread.selectedText)}
+            {getThreadTitle(thread.selectedText, isMainThread ? firstUserMessage : undefined)}
           </h3>
         </div>
 

@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
-import { Bot } from 'lucide-react';
+import { Bot, Brain, ChevronDown } from 'lucide-react';
 
 interface MessageProps {
   message: MessageType;
@@ -13,6 +14,7 @@ interface MessageProps {
 
 export function Message({ message, onTextSelect, isHighlighted, highlightedText }: MessageProps) {
   const isUser = message.role === 'user';
+  const [showThinking, setShowThinking] = useState(false);
 
   const handleMouseUp = () => {
     if (onTextSelect) {
@@ -64,6 +66,30 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
               <Bot size={14} />
             </div>
             <span className="text-sm font-medium">Claude</span>
+          </div>
+        )}
+
+        {/* Extended Thinking Block */}
+        {!isUser && message.thinking && (
+          <div className="mb-4 border border-border rounded-lg overflow-hidden bg-surface">
+            <button
+              onClick={() => setShowThinking(!showThinking)}
+              className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium hover:bg-surface-2 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Brain size={12} className="text-text-secondary" />
+                <span>Extended Thinking</span>
+              </div>
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${showThinking ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {showThinking && (
+              <div className="px-4 py-3 text-xs text-text-secondary border-t border-border bg-background whitespace-pre-wrap">
+                {message.thinking}
+              </div>
+            )}
           </div>
         )}
 

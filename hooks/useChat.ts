@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Message, ChatMessage } from '@/types';
+import { Message, ChatMessage, ChatSettings } from '@/types';
 import { generateId } from '@/lib/storage';
 
 interface UseChatOptions {
   threadId: string;
   apiKey: string;
+  settings: ChatSettings;
   onMessage?: (message: Message) => void;
 }
 
-export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
+export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +56,9 @@ export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
           body: JSON.stringify({
             messages: apiMessages,
             apiKey,
+            model: settings.model,
+            maxTokens: settings.maxTokens,
+            extendedThinking: settings.extendedThinking,
           }),
         });
 
@@ -71,6 +75,8 @@ export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let assistantContent = '';
+        let thinkingContent = '';
+        let isInThinkingBlock = false;
 
         const assistantMessage: Message = {
           id: generateId(),
@@ -104,7 +110,20 @@ export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
                   // Handle error from stream
                   throw new Error(parsed.error);
                 }
-                if (parsed.text) {
+                // Handle thinking block start/end markers
+                if (parsed.thinkingStart) {
+                  isInThinkingBlock = true;
+                } else if (parsed.textStart) {
+                  isInThinkingBlock = false;
+                }
+                // Handle thinking content
+                else if (parsed.thinking) {
+                  thinkingContent += parsed.thinking;
+                  assistantMessage.thinking = thinkingContent;
+                  onMessage?.({ ...assistantMessage });
+                }
+                // Handle regular text content
+                else if (parsed.text) {
                   assistantContent += parsed.text;
                   assistantMessage.content = assistantContent;
                   // Trigger re-render by calling onMessage with updated message
@@ -130,7 +149,7 @@ export function useChat({ threadId, apiKey, onMessage }: UseChatOptions) {
         return null;
       }
     },
-    [apiKey, threadId, onMessage]
+    [apiKey, threadId, settings, onMessage]
   );
 
   return {
