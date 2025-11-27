@@ -6,15 +6,17 @@ import { ConversationState } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
 import { ThreadSelector } from '@/components/chat/ThreadSelector';
 import { ThreadTree } from '@/components/threading/ThreadTree';
+import { ApiKeyModal } from '@/components/settings/ApiKeyModal';
 import { useThreads } from '@/hooks/useThreads';
-import { Network } from 'lucide-react';
+import { Network, Key } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
   onClearApiKey: () => void;
+  onUpdateApiKey: (newKey: string) => void;
 }
 
-export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
+export function ChatApp({ apiKey, onClearApiKey, onUpdateApiKey }: ChatAppProps) {
   const [conversationState, setConversationState] = useState<ConversationState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{
     text: string;
@@ -22,6 +24,7 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
     threadId: string;
   } | null>(null);
   const [showThreadTree, setShowThreadTree] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   // Initialize conversation state
   useEffect(() => {
@@ -102,10 +105,11 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
           </button>
         </div>
         <button
-          onClick={onClearApiKey}
-          className="px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          onClick={() => setShowApiKeyModal(true)}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
         >
-          Change API Key
+          <Key size={14} />
+          API Key
         </button>
       </header>
 
@@ -130,6 +134,14 @@ export function ChatApp({ apiKey, onClearApiKey }: ChatAppProps) {
             currentThreadId={threading.currentThreadId}
             onNavigate={threading.navigateToThread}
             onClose={() => setShowThreadTree(false)}
+          />
+        )}
+
+        {showApiKeyModal && (
+          <ApiKeyModal
+            currentApiKey={apiKey}
+            onSave={onUpdateApiKey}
+            onClose={() => setShowApiKeyModal(false)}
           />
         )}
       </main>

@@ -29,6 +29,12 @@ export default function Home() {
     setHasApiKey(false);
   };
 
+  const handleUpdateApiKey = (newKey: string) => {
+    storage.saveApiKey(newKey);
+    setApiKey(newKey);
+    setHasApiKey(true);
+  };
+
   if (!hasApiKey) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -73,5 +79,11 @@ export default function Home() {
     );
   }
 
-  return <ChatApp apiKey={apiKey} onClearApiKey={handleClearApiKey} />;
+  return (
+    <ChatApp
+      apiKey={apiKey}
+      onClearApiKey={handleClearApiKey}
+      onUpdateApiKey={handleUpdateApiKey}
+    />
+  );
 }
