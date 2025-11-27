@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
 
     let stream;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const streamOptions: any = {
         model: model,
         max_tokens: maxTokens,
@@ -53,16 +54,17 @@ export async function POST(req: NextRequest) {
       }
 
       stream = await anthropic.messages.stream(streamOptions);
-    } catch (streamError: any) {
+    } catch (streamError: unknown) {
       // Handle errors that occur before streaming starts
+      const error = streamError as { message?: string; status?: number; error?: { error?: { message?: string }; message?: string } };
       console.error('Failed to create stream:', streamError);
       return new Response(
         JSON.stringify({
-          error: streamError.message || 'Failed to start chat stream',
-          details: streamError.error?.error?.message || streamError.error?.message || undefined
+          error: error.message || 'Failed to start chat stream',
+          details: error.error?.error?.message || error.error?.message || undefined
         }),
         {
-          status: streamError.status || 500,
+          status: error.status || 500,
           headers: { 'Content-Type': 'application/json' }
         }
       );
@@ -79,25 +81,28 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
             }
             // Handle thinking deltas (extended thinking)
-            else if (chunk.type === 'content_block_delta' && chunk.delta.type === 'thinking_delta') {
-              const thinking = chunk.delta.thinking;
+            // Note: thinking_delta is not in SDK types but is part of the API
+            else if (chunk.type === 'content_block_delta' && (chunk.delta as { type: string; thinking?: string }).type === 'thinking_delta') {
+              const thinking = (chunk.delta as { thinking?: string }).thinking;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ thinking })}\n\n`));
             }
             // Handle content block start to differentiate thinking vs text blocks
             else if (chunk.type === 'content_block_start') {
-              if (chunk.content_block?.type === 'thinking') {
+              const contentBlock = chunk.content_block as { type?: string };
+              if (contentBlock?.type === 'thinking') {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ thinkingStart: true })}\n\n`));
-              } else if (chunk.content_block?.type === 'text') {
+              } else if (contentBlock?.type === 'text') {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ textStart: true })}\n\n`));
               }
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const streamError = error as { message?: string; error?: { error?: { message?: string } } };
           console.error('Stream error:', error);
           // Send error as SSE event before closing
-          const errorMessage = error.error?.error?.message || error.message || 'Stream error occurred';
+          const errorMessage = streamError.error?.error?.message || streamError.message || 'Stream error occurred';
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
           );
@@ -113,15 +118,16 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const apiError = error as { message?: string; status?: number; error?: { message?: string } };
     console.error('Chat API error:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Failed to process chat request',
-        details: error.error?.message || undefined
+        error: apiError.message || 'Failed to process chat request',
+        details: apiError.error?.message || undefined
       }),
       {
-        status: error.status || 500,
+        status: apiError.status || 500,
         headers: { 'Content-Type': 'application/json' }
       }
     );

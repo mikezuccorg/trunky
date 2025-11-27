@@ -30,16 +30,10 @@ export function ThreadManager({
     return allThreads.filter((t) => t.parentThreadId === threadId);
   };
 
-  // Determine if a thread is the current (rightmost) thread
-  const isCurrentThread = (threadId: string) => {
-    return threadId === threads[threads.length - 1]?.id;
-  };
-
   return (
     <div className="flex h-full w-full">
       {visibleThreads.map((thread, index) => {
         const isCurrent = index === visibleThreads.length - 1;
-        const isParent = index === 0 && visibleThreads.length > 1;
 
         return (
           <div

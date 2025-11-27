@@ -65,7 +65,7 @@ export function ApiKeyModal({ currentApiKey, onSave, onClose }: ApiKeyModalProps
             <ul className="text-xs text-text-secondary space-y-1">
               <li>• Your API key is stored locally in your browser</li>
               <li>• It is never sent to our servers</li>
-              <li>• Only transmitted directly to Anthropic's API</li>
+              <li>• Only transmitted directly to Anthropic&apos;s API</li>
             </ul>
           </div>
 

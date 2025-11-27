@@ -5,7 +5,6 @@ import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 import { useChat } from '@/hooks/useChat';
-import { storage } from '@/lib/storage';
 
 interface ChatInterfaceProps {
   thread: Thread;
@@ -95,16 +94,6 @@ export function ChatInterface({
     }
   };
 
-  // Find which messages should be highlighted (if any child threads reference them)
-  const getHighlightForMessage = (messageId: string) => {
-    const childThread = childThreads.find(
-      (t) => t.parentMessageId === messageId && t.parentThreadId === thread.id
-    );
-    return childThread
-      ? { highlightedText: childThread.selectedText || '' }
-      : null;
-  };
-
   // Find the first child thread to determine highlight (for simplicity, we'll highlight based on first active child)
   const activeChildThread = childThreads[0];
   const highlightInfo = activeChildThread?.parentThreadId === thread.id
@@ -122,7 +111,7 @@ export function ChatInterface({
           <div className="max-w-4xl mx-auto">
             <p className="text-xs text-text-secondary mb-1">Thread from:</p>
             <p className="text-sm text-text-primary italic line-clamp-2">
-              "{thread.selectedText}"
+              &quot;{thread.selectedText}&quot;
             </p>
           </div>
         </div>
