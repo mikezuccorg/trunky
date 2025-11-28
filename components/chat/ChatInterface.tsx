@@ -35,8 +35,11 @@ export function ChatInterface({
     setMessages(thread.messages);
   }, [thread.messages]);
 
+  const [isStreaming, setIsStreaming] = useState(false);
+
   const handleMessage = useCallback(
-    (message: Message) => {
+    (message: Message, streaming: boolean = false) => {
+      setIsStreaming(streaming);
       setMessages((prev) => {
         // Check if message already exists (for streaming updates)
         const existingIndex = prev.findIndex((m) => m.id === message.id);
@@ -63,8 +66,9 @@ export function ChatInterface({
   });
 
   // Save messages and settings to thread whenever they change
+  // BUT don't update during streaming to prevent infinite re-render loop
   useEffect(() => {
-    if (messages.length > 0 && messages !== thread.messages) {
+    if (messages.length > 0 && messages !== thread.messages && !isStreaming) {
       const updatedThread = {
         ...thread,
         messages,
@@ -72,7 +76,7 @@ export function ChatInterface({
       };
       onUpdateThread(updatedThread);
     }
-  }, [messages, settings, thread, onUpdateThread]);
+  }, [messages, settings, thread, onUpdateThread, isStreaming]);
 
   const handleSettingsChange = (newSettings: ChatSettingsType) => {
     setSettings(newSettings);

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
 import { Bot, Brain, ChevronDown } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageProps {
   message: MessageType;
@@ -28,28 +30,125 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
 
   // Helper to render content with highlighted text
   const renderContent = () => {
-    if (!isHighlighted || !highlightedText) {
-      return message.content;
+    const content = message.content;
+
+    // For bot messages, render markdown
+    if (!isUser) {
+      if (isHighlighted && highlightedText) {
+        const index = content.indexOf(highlightedText);
+        if (index !== -1) {
+          const before = content.slice(0, index);
+          const highlighted = content.slice(index, index + highlightedText.length);
+          const after = content.slice(index + highlightedText.length);
+
+          return (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+                h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
+                ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="ml-4">{children}</li>,
+                code: ({ inline, children, ...props }: any) =>
+                  inline ? (
+                    <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                      {children}
+                    </code>
+                  ) : (
+                    <code className="block bg-surface-2 p-3 rounded text-sm font-mono overflow-x-auto mb-4" {...props}>
+                      {children}
+                    </code>
+                  ),
+                pre: ({ children }) => <pre className="mb-4">{children}</pre>,
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
+                    {children}
+                  </blockquote>
+                ),
+                a: ({ children, href }) => (
+                  <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
+                    {children}
+                  </a>
+                ),
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+              }}
+            >
+              {before}
+              <span className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+                {highlighted}
+              </span>
+              {after}
+            </ReactMarkdown>
+          );
+        }
+      }
+
+      return (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+            h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
+            ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+            li: ({ children }) => <li className="ml-4">{children}</li>,
+            code: ({ inline, children, ...props }: any) =>
+              inline ? (
+                <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                  {children}
+                </code>
+              ) : (
+                <code className="block bg-surface-2 p-3 rounded text-sm font-mono overflow-x-auto mb-4" {...props}>
+                  {children}
+                </code>
+              ),
+            pre: ({ children }) => <pre className="mb-4">{children}</pre>,
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
+                {children}
+              </blockquote>
+            ),
+            a: ({ children, href }) => (
+              <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
+                {children}
+              </a>
+            ),
+            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+            em: ({ children }) => <em className="italic">{children}</em>,
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      );
     }
 
-    const index = message.content.indexOf(highlightedText);
-    if (index === -1) {
-      return message.content;
+    // For user messages, handle highlighting
+    if (isHighlighted && highlightedText) {
+      const index = content.indexOf(highlightedText);
+      if (index !== -1) {
+        const before = content.slice(0, index);
+        const highlighted = content.slice(index, index + highlightedText.length);
+        const after = content.slice(index + highlightedText.length);
+
+        return (
+          <>
+            {before}
+            <span className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+              {highlighted}
+            </span>
+            {after}
+          </>
+        );
+      }
     }
 
-    const before = message.content.slice(0, index);
-    const highlighted = message.content.slice(index, index + highlightedText.length);
-    const after = message.content.slice(index + highlightedText.length);
-
-    return (
-      <>
-        {before}
-        <span className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
-          {highlighted}
-        </span>
-        {after}
-      </>
-    );
+    return content;
   };
 
   return (
@@ -93,8 +192,8 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
           </div>
         )}
 
-        <div className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
-          isUser ? 'text-text-primary' : 'text-text-primary'
+        <div className={`text-[15px] leading-relaxed break-words ${
+          isUser ? 'text-text-primary whitespace-pre-wrap' : 'text-text-primary markdown-content'
         }`}>
           {renderContent()}
         </div>

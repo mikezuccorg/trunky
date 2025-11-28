@@ -23,6 +23,15 @@
   }
 }
 
+/* Markdown content styling - preserves Claude serif typography */
+.markdown-content {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+}
+
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
   width: 6px;

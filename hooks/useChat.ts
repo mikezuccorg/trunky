@@ -8,7 +8,7 @@ interface UseChatOptions {
   threadId: string;
   apiKey: string;
   settings: ChatSettings;
-  onMessage?: (message: Message) => void;
+  onMessage?: (message: Message, streaming?: boolean) => void;
 }
 
 export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOptions) {
@@ -33,7 +33,7 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
         threadId,
       };
 
-      onMessage?.(userMessage);
+      onMessage?.(userMessage, false);
 
       try {
         // Prepare messages for API (only role and content)
@@ -120,14 +120,14 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
                 else if (parsed.thinking) {
                   thinkingContent += parsed.thinking;
                   assistantMessage.thinking = thinkingContent;
-                  onMessage?.({ ...assistantMessage });
+                  onMessage?.({ ...assistantMessage }, true);
                 }
                 // Handle regular text content
                 else if (parsed.text) {
                   assistantContent += parsed.text;
                   assistantMessage.content = assistantContent;
                   // Trigger re-render by calling onMessage with updated message
-                  onMessage?.({ ...assistantMessage });
+                  onMessage?.({ ...assistantMessage }, true);
                 }
               } catch (e: any) {
                 // If it's a structured error, throw it
@@ -139,6 +139,9 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
             }
           }
         }
+
+        // Streaming complete - persist the final message
+        onMessage?.({ ...assistantMessage }, false);
 
         setIsLoading(false);
         return assistantMessage;
