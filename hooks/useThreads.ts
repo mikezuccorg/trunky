@@ -12,7 +12,13 @@ interface UseThreadsOptions {
 export function useThreads({ conversationState, setConversationState }: UseThreadsOptions) {
   const createNewThread = useCallback(
     (parentThreadId: string, parentMessageId: string, selectedText: string): Thread => {
-      const newThread = createThread(parentThreadId, parentMessageId, selectedText);
+      // Get parent thread and extract messages up to the branching point
+      const parentThread = conversationState.threads[parentThreadId];
+      const inheritedMessages = parentThread
+        ? getMessagesUpToPoint(parentThread, parentMessageId)
+        : [];
+
+      const newThread = createThread(parentThreadId, parentMessageId, selectedText, inheritedMessages);
 
       const updatedState: ConversationState = {
         ...conversationState,

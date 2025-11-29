@@ -19,7 +19,11 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
   const highlightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if user isn't selecting text
+    const selection = window.getSelection();
+    if (!selection || selection.toString().trim().length === 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages.length]);
 
   // Scroll to highlighted message when it exists

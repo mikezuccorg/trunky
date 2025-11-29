@@ -24,16 +24,22 @@ export function ChatInterface({
   const [messages, setMessages] = useState<Message[]>(thread.messages);
   const [settings, setSettings] = useState<ChatSettingsType>(
     thread.settings || {
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       maxTokens: 4096,
       extendedThinking: false,
     }
   );
 
-  // Update messages when thread changes
+  // Update messages when thread ID changes (navigating to different thread)
+  // Don't sync on messages array changes to prevent clearing user selections
   useEffect(() => {
     setMessages(thread.messages);
-  }, [thread.messages]);
+    setSettings(thread.settings || {
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 4096,
+      extendedThinking: false,
+    });
+  }, [thread.id]); // Only sync when switching threads
 
   const [isStreaming, setIsStreaming] = useState(false);
 

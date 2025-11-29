@@ -16,6 +16,7 @@ interface MessageProps {
 
 export function Message({ message, onTextSelect, isHighlighted, highlightedText }: MessageProps) {
   const isUser = message.role === 'user';
+  const isInherited = message.isInherited || false;
   const [showThinking, setShowThinking] = useState(false);
 
   const handleMouseUp = () => {
@@ -153,7 +154,9 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
 
   return (
     <div
-      className={`group px-6 py-6 transition-colors bg-background border-b border-border/30 ${
+      className={`group px-6 py-6 transition-colors ${
+        isInherited ? 'bg-surface/50 opacity-70' : 'bg-background'
+      } border-b border-border/30 ${
         isHighlighted ? 'ring-2 ring-highlight-border ring-inset' : ''
       }`}
       onMouseUp={handleMouseUp}
@@ -165,6 +168,18 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
               <Bot size={14} />
             </div>
             <span className="text-sm font-medium">Claude</span>
+            {isInherited && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-text-secondary border border-border">
+                From parent thread
+              </span>
+            )}
+          </div>
+        )}
+        {isUser && isInherited && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-text-secondary border border-border">
+              From parent thread
+            </span>
           </div>
         )}
 
