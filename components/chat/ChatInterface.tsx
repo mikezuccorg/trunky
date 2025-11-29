@@ -5,6 +5,7 @@ import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 import { useChat } from '@/hooks/useChat';
+import { X } from 'lucide-react';
 
 interface ChatInterfaceProps {
   thread: Thread;
@@ -12,6 +13,7 @@ interface ChatInterfaceProps {
   onUpdateThread: (thread: Thread) => void;
   onTextSelect?: (text: string, messageId: string, threadId: string) => void;
   childThreads?: Thread[]; // Child threads spawned from this thread
+  onClose?: () => void; // Close button handler for child threads
 }
 
 export function ChatInterface({
@@ -20,6 +22,7 @@ export function ChatInterface({
   onUpdateThread,
   onTextSelect,
   childThreads = [],
+  onClose,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(thread.messages);
   const [settings, setSettings] = useState<ChatSettingsType>(
@@ -118,11 +121,22 @@ export function ChatInterface({
       {/* Thread header */}
       {thread.selectedText && (
         <div className="border-b border-border bg-surface px-6 py-3">
-          <div className="max-w-4xl mx-auto">
-            <p className="text-xs text-text-secondary mb-1">Thread from:</p>
-            <p className="text-sm text-text-primary italic line-clamp-2">
-              &quot;{thread.selectedText}&quot;
-            </p>
+          <div className="max-w-4xl mx-auto flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-text-secondary mb-1">Thread from:</p>
+              <p className="text-sm text-text-primary italic line-clamp-2">
+                &quot;{thread.selectedText}&quot;
+              </p>
+            </div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex-shrink-0 p-1 hover:bg-surface-2 rounded transition-colors"
+                aria-label="Close thread"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
       )}
