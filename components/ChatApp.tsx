@@ -6,9 +6,10 @@ import { ConversationState } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
 import { ThreadSelector } from '@/components/chat/ThreadSelector';
 import { ThreadTree } from '@/components/threading/ThreadTree';
+import { ConversationSelector } from '@/components/threading/ConversationSelector';
 import { ApiKeyModal } from '@/components/settings/ApiKeyModal';
 import { useThreads } from '@/hooks/useThreads';
-import { Network, Key } from 'lucide-react';
+import { Network, Key, Plus, FolderOpen } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
@@ -23,6 +24,7 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
     threadId: string;
   } | null>(null);
   const [showThreadTree, setShowThreadTree] = useState(false);
+  const [showConversationSelector, setShowConversationSelector] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   // Initialize conversation state
@@ -80,6 +82,10 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
     }
   };
 
+  const handleNewConversation = () => {
+    threading.startNewConversation();
+  };
+
   if (!conversationState) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -90,17 +96,43 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
 
   const allThreads = threading.getAllThreads();
 
+  // Get current conversation tree threads
+  const getCurrentTreeThreads = (rootThreadId: string): number => {
+    const countThreadsRecursively = (threadId: string): number => {
+      const children = allThreads.filter(t => t.parentThreadId === threadId);
+      return 1 + children.reduce((sum, child) => sum + countThreadsRecursively(child.id), 0);
+    };
+    return countThreadsRecursively(rootThreadId);
+  };
+
+  const currentTreeThreadCount = getCurrentTreeThreads(conversationState.mainThreadId);
+  const rootThreadCount = allThreads.filter(t => t.parentThreadId === null).length;
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">Trunky</h1>
           <button
+            onClick={handleNewConversation}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          >
+            <Plus size={14} />
+            New Conversation
+          </button>
+          <button
+            onClick={() => setShowConversationSelector(!showConversationSelector)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          >
+            <FolderOpen size={14} />
+            {rootThreadCount} conversation{rootThreadCount !== 1 ? 's' : ''}
+          </button>
+          <button
             onClick={() => setShowThreadTree(!showThreadTree)}
             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
           >
             <Network size={14} />
-            {allThreads.length} thread{allThreads.length !== 1 ? 's' : ''}
+            {currentTreeThreadCount} thread{currentTreeThreadCount !== 1 ? 's' : ''}
           </button>
         </div>
         <button
@@ -124,6 +156,15 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
 
         {pendingSelection && (
           <ThreadSelector onCreateThread={handleCreateThread} />
+        )}
+
+        {showConversationSelector && (
+          <ConversationSelector
+            threads={allThreads}
+            mainThreadId={conversationState.mainThreadId}
+            onNavigate={threading.navigateToThread}
+            onClose={() => setShowConversationSelector(false)}
+          />
         )}
 
         {showThreadTree && (

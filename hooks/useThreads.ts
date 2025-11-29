@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { ConversationState, Thread } from '@/types';
-import { createThread, storage } from '@/lib/storage';
+import { createThread, storage, getMessagesUpToPoint } from '@/lib/storage';
 
 interface UseThreadsOptions {
   conversationState: ConversationState;
@@ -84,6 +84,26 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     [conversationState, setConversationState]
   );
 
+  const startNewConversation = useCallback(() => {
+    const newThread = createThread();
+
+    const updatedState: ConversationState = {
+      ...conversationState,
+      threads: {
+        ...conversationState.threads,
+        [newThread.id]: newThread,
+      },
+      activeThreadIds: [newThread.id],
+      mainThreadId: newThread.id,
+      currentThreadId: newThread.id,
+    };
+
+    setConversationState(updatedState);
+    storage.saveConversations(updatedState);
+
+    return newThread;
+  }, [conversationState, setConversationState]);
+
   // Get all threads as a tree structure
   const getAllThreads = useCallback(() => {
     return Object.values(conversationState.threads);
@@ -104,6 +124,7 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     closeThread,
     updateThread,
     navigateToThread,
+    startNewConversation,
     getAllThreads,
     getChildThreads,
     activeThreads: conversationState.activeThreadIds.map(

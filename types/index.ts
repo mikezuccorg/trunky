@@ -5,6 +5,7 @@ export interface Message {
   timestamp: number;
   threadId: string;
   thinking?: string; // Extended thinking content (separate from main content)
+  isInherited?: boolean; // Whether this message is inherited from parent thread
 }
 
 export interface ChatSettings {

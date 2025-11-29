@@ -64,14 +64,28 @@ export const generateId = (): string => {
 export const createThread = (
   parentThreadId: string | null = null,
   parentMessageId: string | null = null,
-  selectedText?: string
+  selectedText?: string,
+  inheritedMessages: any[] = []
 ): Thread => {
   return {
     id: generateId(),
     parentThreadId,
     parentMessageId,
     selectedText,
-    messages: [],
+    messages: inheritedMessages,
     createdAt: Date.now(),
   };
+};
+
+// Get all messages up to a specific message in a thread (for branching)
+export const getMessagesUpToPoint = (
+  thread: Thread,
+  messageId: string
+): any[] => {
+  const messageIndex = thread.messages.findIndex(m => m.id === messageId);
+  if (messageIndex === -1) {
+    return thread.messages.map(m => ({ ...m, isInherited: true }));
+  }
+  // Include all messages up to and including the branching message
+  return thread.messages.slice(0, messageIndex + 1).map(m => ({ ...m, isInherited: true }));
 };
