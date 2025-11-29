@@ -38,17 +38,35 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
     ul: ({ children }: any) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
     ol: ({ children }: any) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
     li: ({ children }: any) => <li className="ml-4">{children}</li>,
-    code: ({ inline, children, ...props }: any) =>
-      inline ? (
-        <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
-          {children}
-        </code>
-      ) : (
-        <code className="block bg-surface-2 p-3 rounded text-sm font-mono overflow-x-auto mb-4" {...props}>
-          {children}
-        </code>
-      ),
-    pre: ({ children }: any) => <pre className="mb-4">{children}</pre>,
+    code: ({ inline, className, children, ...props }: any) => {
+      // Extract language from className (format: language-xxx)
+      const match = /language-(\w+)/.exec(className || '');
+      const language = match ? match[1] : '';
+
+      if (inline) {
+        return (
+          <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono text-accent" {...props}>
+            {children}
+          </code>
+        );
+      }
+
+      return (
+        <div className="my-4 rounded-lg overflow-hidden border border-border bg-surface">
+          {language && (
+            <div className="px-4 py-2 bg-surface-2 border-b border-border flex items-center justify-between">
+              <span className="text-xs font-medium text-text-secondary uppercase">{language}</span>
+            </div>
+          )}
+          <pre className="overflow-x-auto">
+            <code className="block px-4 py-3 text-sm font-mono leading-relaxed text-text-primary" {...props}>
+              {children}
+            </code>
+          </pre>
+        </div>
+      );
+    },
+    pre: ({ children }: any) => <>{children}</>,
     blockquote: ({ children }: any) => (
       <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
         {children}
@@ -112,6 +130,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
         blockquote: wrapWithHighlight('blockquote', 'border-l-4 border-border pl-4 italic my-4 text-text-secondary'),
         strong: wrapWithHighlight('strong', 'font-semibold'),
         em: wrapWithHighlight('em', 'italic'),
+        // Code blocks and inline code don't need highlighting
         code: markdownComponents.code,
         pre: markdownComponents.pre,
         a: markdownComponents.a,
