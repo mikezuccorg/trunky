@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ConversationState, Thread } from '@/types';
 import { createThread, storage, getMessagesUpToPoint } from '@/lib/storage';
 
@@ -125,6 +125,14 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     [conversationState.threads]
   );
 
+  // Memoize activeThreads to prevent unnecessary re-renders
+  const activeThreads = useMemo(
+    () => conversationState.activeThreadIds.map(
+      (id) => conversationState.threads[id]
+    ),
+    [conversationState.activeThreadIds, conversationState.threads]
+  );
+
   return {
     createNewThread,
     closeThread,
@@ -133,9 +141,7 @@ export function useThreads({ conversationState, setConversationState }: UseThrea
     startNewConversation,
     getAllThreads,
     getChildThreads,
-    activeThreads: conversationState.activeThreadIds.map(
-      (id) => conversationState.threads[id]
-    ),
+    activeThreads,
     currentThreadId: conversationState.currentThreadId,
   };
 }

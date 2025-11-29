@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
 import { Bot, Brain, ChevronDown } from 'lucide-react';
@@ -29,49 +29,107 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
     }
   };
 
+  // Memoize markdown components to prevent re-creation on every render
+  const markdownComponents = useMemo(() => ({
+    p: ({ children }: any) => <p className="mb-4 last:mb-0">{children}</p>,
+    h1: ({ children }: any) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
+    ul: ({ children }: any) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+    ol: ({ children }: any) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+    li: ({ children }: any) => <li className="ml-4">{children}</li>,
+    code: ({ inline, children, ...props }: any) =>
+      inline ? (
+        <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+          {children}
+        </code>
+      ) : (
+        <code className="block bg-surface-2 p-3 rounded text-sm font-mono overflow-x-auto mb-4" {...props}>
+          {children}
+        </code>
+      ),
+    pre: ({ children }: any) => <pre className="mb-4">{children}</pre>,
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
+        {children}
+      </blockquote>
+    ),
+    a: ({ children, href }: any) => (
+      <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ),
+    strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+    em: ({ children }: any) => <em className="italic">{children}</em>,
+  }), []);
+
+  // Helper function to highlight text within string content
+  const highlightText = (text: string): React.ReactNode => {
+    if (!highlightedText || !text.includes(highlightedText)) {
+      return text;
+    }
+    const parts = text.split(highlightedText);
+    return parts.map((part, i) => (
+      <span key={i}>
+        {part}
+        {i < parts.length - 1 && (
+          <mark className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+            {highlightedText}
+          </mark>
+        )}
+      </span>
+    ));
+  };
+
+  // Create highlighted versions of components when needed
+  const getComponents = useMemo(() => {
+    if (!isUser && isHighlighted && highlightedText) {
+      // Create wrapper that processes children to add highlights
+      const wrapWithHighlight = (Component: any, className?: string) => {
+        return ({ children, ...props }: any) => {
+          const processChildren = (child: any): any => {
+            if (typeof child === 'string') {
+              return highlightText(child);
+            }
+            if (Array.isArray(child)) {
+              return child.map(processChildren);
+            }
+            return child;
+          };
+
+          return <Component className={className} {...props}>{processChildren(children)}</Component>;
+        };
+      };
+
+      return {
+        p: wrapWithHighlight('p', 'mb-4 last:mb-0'),
+        h1: wrapWithHighlight('h1', 'text-2xl font-semibold mb-4 mt-6 first:mt-0'),
+        h2: wrapWithHighlight('h2', 'text-xl font-semibold mb-3 mt-5 first:mt-0'),
+        h3: wrapWithHighlight('h3', 'text-lg font-semibold mb-2 mt-4 first:mt-0'),
+        ul: wrapWithHighlight('ul', 'list-disc list-inside mb-4 space-y-1'),
+        ol: wrapWithHighlight('ol', 'list-decimal list-inside mb-4 space-y-1'),
+        li: wrapWithHighlight('li', 'ml-4'),
+        blockquote: wrapWithHighlight('blockquote', 'border-l-4 border-border pl-4 italic my-4 text-text-secondary'),
+        strong: wrapWithHighlight('strong', 'font-semibold'),
+        em: wrapWithHighlight('em', 'italic'),
+        code: markdownComponents.code,
+        pre: markdownComponents.pre,
+        a: markdownComponents.a,
+      };
+    }
+    return markdownComponents;
+  }, [isUser, isHighlighted, highlightedText, markdownComponents]);
+
   // Helper to render content with highlighted text
-  const renderContent = () => {
+  const renderContent = useMemo(() => {
     const content = message.content;
 
     // For bot messages, render markdown
     if (!isUser) {
-      // For highlighted text in bot messages, we need to render markdown first
-      // then apply highlighting as a post-process (not ideal but necessary for ReactMarkdown)
       return (
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          components={{
-            p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-            h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
-            h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
-            h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
-            ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-            li: ({ children }) => <li className="ml-4">{children}</li>,
-            code: ({ inline, children, ...props }: any) =>
-              inline ? (
-                <code className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
-                  {children}
-                </code>
-              ) : (
-                <code className="block bg-surface-2 p-3 rounded text-sm font-mono overflow-x-auto mb-4" {...props}>
-                  {children}
-                </code>
-              ),
-            pre: ({ children }) => <pre className="mb-4">{children}</pre>,
-            blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
-                {children}
-              </blockquote>
-            ),
-            a: ({ children, href }) => (
-              <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
-                {children}
-              </a>
-            ),
-            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-            em: ({ children }) => <em className="italic">{children}</em>,
-          }}
+          components={getComponents}
         >
           {content}
         </ReactMarkdown>
@@ -99,7 +157,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
     }
 
     return content;
-  };
+  }, [message.content, isUser, isHighlighted, highlightedText, getComponents]);
 
   return (
     <div
@@ -159,7 +217,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
         <div className={`text-[15px] leading-relaxed break-words ${
           isUser ? 'text-text-primary whitespace-pre-wrap' : 'text-text-primary markdown-content'
         }`}>
-          {renderContent()}
+          {renderContent}
         </div>
 
         {message.timestamp && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { storage, createThread } from '@/lib/storage';
 import { ConversationState } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
@@ -64,9 +64,9 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
     setConversationState,
   });
 
-  const handleTextSelect = (text: string, messageId: string, threadId: string) => {
+  const handleTextSelect = useCallback((text: string, messageId: string, threadId: string) => {
     setPendingSelection({ text, messageId, threadId });
-  };
+  }, []);
 
   const handleCreateThread = () => {
     if (pendingSelection && conversationState) {
