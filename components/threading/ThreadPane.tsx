@@ -18,7 +18,6 @@ interface ThreadPaneProps {
 export function ThreadPane({
   thread,
   apiKey,
-  isMainThread,
   onUpdateThread,
   onClose,
   onTextSelect,

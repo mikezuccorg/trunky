@@ -1,7 +1,7 @@
 'use client';
 
 import { Thread } from '@/types';
-import { truncateText, formatTimestamp } from '@/lib/utils';
+import { truncateText } from '@/lib/utils';
 
 interface ThreadTreeProps {
   threads: Thread[];
@@ -16,7 +16,7 @@ interface ThreadWithDepth {
   depth: number;
 }
 
-export function ThreadTree({ threads, mainThreadId, currentThreadId, onNavigate, onClose }: ThreadTreeProps) {
+export function ThreadTree({ threads, currentThreadId, onNavigate, onClose }: ThreadTreeProps) {
   // Get the complete hierarchy including all nodes in the tree
   const getCompleteThreadHierarchy = (): ThreadWithDepth[] => {
     const result: ThreadWithDepth[] = [];
@@ -85,7 +85,7 @@ export function ThreadTree({ threads, mainThreadId, currentThreadId, onNavigate,
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {threadHierarchy.map(({ thread, depth }, index) => {
+        {threadHierarchy.map(({ thread, depth }) => {
           const isCurrent = thread.id === currentThreadId;
           const isRoot = thread.parentThreadId === null;
 

@@ -12,7 +12,7 @@ interface ConversationSelectorProps {
   onClose: () => void;
 }
 
-export function ConversationSelector({ threads, mainThreadId, currentThreadId, onNavigate, onClose }: ConversationSelectorProps) {
+export function ConversationSelector({ threads, currentThreadId, onNavigate, onClose }: ConversationSelectorProps) {
   // Find all root threads (threads with no parent)
   const rootThreads = threads.filter(t => t.parentThreadId === null);
 

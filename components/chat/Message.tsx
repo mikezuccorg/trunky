@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Message as MessageType, Thread } from '@/types';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
 import { Bot, Brain, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 
 interface ThreadSelection {
   threadId: string;
@@ -38,18 +39,19 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
   };
 
   // Memoize markdown components to prevent re-creation on every render
-  const markdownComponents = useMemo(() => ({
-    p: ({ children }: any) => <p className="mb-4 last:mb-0">{children}</p>,
-    h1: ({ children }: any) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
-    h2: ({ children }: any) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
-    h3: ({ children }: any) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
-    ul: ({ children }: any) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-    ol: ({ children }: any) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-    li: ({ children }: any) => <li className="ml-4">{children}</li>,
-    code: ({ inline, className, children, ...props }: any) => {
+  const markdownComponents = useMemo<Components>(() => ({
+    p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+    h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
+    ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+    li: ({ children }) => <li className="ml-4">{children}</li>,
+    code: ({ className, children, ...props }) => {
       // Extract language from className (format: language-xxx)
       const match = /language-(\w+)/.exec(className || '');
       const language = match ? match[1] : '';
+      const inline = !language; // If no language, it's inline code
 
       if (inline) {
         return (
@@ -74,23 +76,23 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         </div>
       );
     },
-    pre: ({ children }: any) => <>{children}</>,
-    blockquote: ({ children }: any) => (
+    pre: ({ children }) => <>{children}</>,
+    blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
         {children}
       </blockquote>
     ),
-    a: ({ children, href }: any) => (
+    a: ({ children, href }) => (
       <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
         {children}
       </a>
     ),
-    strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
-    em: ({ children }: any) => <em className="italic">{children}</em>,
+    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+    em: ({ children }) => <em className="italic">{children}</em>,
   }), []);
 
   // Helper function to highlight text with both active highlights and thread selections
-  const highlightText = (text: string): React.ReactNode => {
+  const highlightText = useCallback((text: string): React.ReactNode => {
     // Build a list of all text ranges that need special rendering
     const highlights: Array<{
       start: number;
@@ -202,7 +204,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     }
 
     return <>{parts}</>;
-  };
+  }, [isHighlighted, highlightedText, childThreads, onNavigateToThread]);
 
   // Create highlighted versions of components when needed
   const getComponents = useMemo(() => {
@@ -211,9 +213,9 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
 
     if (shouldApplyHighlighting) {
       // Create wrapper that processes children to add highlights
-      const wrapWithHighlight = (Component: any, className?: string) => {
-        return ({ children, ...props }: any) => {
-          const processChildren = (child: any): any => {
+      const wrapWithHighlight = (Component: string, className?: string) => {
+        const WrappedComponent = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+          const processChildren = (child: React.ReactNode): React.ReactNode => {
             if (typeof child === 'string') {
               return highlightText(child);
             }
@@ -223,8 +225,10 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
             return child;
           };
 
-          return <Component className={className} {...props}>{processChildren(children)}</Component>;
+          return React.createElement(Component, { className, ...props }, processChildren(children));
         };
+        WrappedComponent.displayName = `Highlighted${Component}`;
+        return WrappedComponent;
       };
 
       return {
@@ -242,7 +246,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         code: markdownComponents.code,
         pre: markdownComponents.pre,
         a: markdownComponents.a,
-      };
+      } as Components;
     }
     return markdownComponents;
   }, [isUser, isHighlighted, highlightedText, childThreads, markdownComponents, highlightText]);

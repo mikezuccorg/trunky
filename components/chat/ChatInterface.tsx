@@ -46,6 +46,7 @@ export function ChatInterface({
       maxTokens: 4096,
       extendedThinking: false,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread.id]); // Only sync when switching threads
 
   const [isStreaming, setIsStreaming] = useState(false);

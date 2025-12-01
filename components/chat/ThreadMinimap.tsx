@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Message, Thread } from '@/types';
 
 interface ThreadMinimapProps {
   messages: Message[];
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   allThreads?: Thread[];
   highlightMessageId?: string;
   highlightedText?: string;
@@ -36,7 +36,7 @@ export function ThreadMinimap({
   const [isDragging, setIsDragging] = useState(false);
 
   // Calculate message layouts based on actual DOM heights
-  const calculateMessageLayouts = (msgs: Message[], canvasHeight: number): MessageLayout[] => {
+  const calculateMessageLayouts = useCallback((msgs: Message[], canvasHeight: number): MessageLayout[] => {
     const CHARS_PER_LINE = 50;
 
     // Calculate total actual height
@@ -119,7 +119,7 @@ export function ThreadMinimap({
       currentY += scaledHeight;
       return layout;
     });
-  };
+  }, [messageHeights, allThreads]);
 
   // Update viewport indicator when scroll happens
   useEffect(() => {
@@ -293,7 +293,7 @@ export function ThreadMinimap({
     ctx.lineWidth = 1.5;
     ctx.strokeRect(0.75, viewportPosition + 0.75, width - 1.5, viewportHeight - 1.5);
 
-  }, [messages, viewportPosition, viewportHeight, allThreads, highlightMessageId, highlightedText, messageHeights]);
+  }, [messages, viewportPosition, viewportHeight, allThreads, highlightMessageId, highlightedText, messageHeights, calculateMessageLayouts]);
 
   // Handle scroll from minimap interaction
   const scrollToPosition = (clientY: number) => {

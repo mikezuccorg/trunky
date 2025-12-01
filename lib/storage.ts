@@ -1,4 +1,4 @@
-import { ConversationState, Thread } from '@/types';
+import { ConversationState, Thread, Message } from '@/types';
 
 const STORAGE_KEY = 'trunky_conversations';
 const API_KEY_STORAGE = 'trunky_api_key';
@@ -65,7 +65,7 @@ export const createThread = (
   parentThreadId: string | null = null,
   parentMessageId: string | null = null,
   selectedText?: string,
-  inheritedMessages: any[] = []
+  inheritedMessages: Message[] = []
 ): Thread => {
   return {
     id: generateId(),
@@ -81,7 +81,7 @@ export const createThread = (
 export const getMessagesUpToPoint = (
   thread: Thread,
   messageId: string
-): any[] => {
+): Message[] => {
   const messageIndex = thread.messages.findIndex(m => m.id === messageId);
   if (messageIndex === -1) {
     return thread.messages.map(m => ({ ...m, isInherited: true }));
