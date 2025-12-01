@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
 import { Thread } from '@/types';
 import { truncateText, formatTimestamp } from '@/lib/utils';
-import { ChevronRight, MessageSquare, FolderOpen } from 'lucide-react';
+import { MessageSquare, FolderOpen } from 'lucide-react';
 
 interface ThreadTreeProps {
   threads: Thread[];
@@ -13,92 +12,36 @@ interface ThreadTreeProps {
   onClose: () => void;
 }
 
-interface ThreadNodeProps {
-  thread: Thread;
-  allThreads: Thread[];
-  currentThreadId: string;
-  onNavigate: (threadId: string) => void;
-  level?: number;
-}
-
-function ThreadNode({ thread, allThreads, currentThreadId, onNavigate, level = 0 }: ThreadNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const childThreads = allThreads.filter(t => t.parentThreadId === thread.id);
-  const hasChildren = childThreads.length > 0;
-  const isCurrent = thread.id === currentThreadId;
-
-  return (
-    <div className="select-none">
-      <div
-        className={`flex items-start gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors ${
-          isCurrent ? 'bg-surface-3 font-medium' : 'hover:bg-surface-2'
-        }`}
-        style={{ paddingLeft: `${level * 16 + 12}px` }}
-        onClick={() => onNavigate(thread.id)}
-      >
-        {hasChildren && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-            className="flex-shrink-0 mt-0.5 hover:bg-surface-3 rounded p-0.5"
-          >
-            <ChevronRight
-              size={14}
-              className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-            />
-          </button>
-        )}
-        {!hasChildren && <div className="w-5" />}
-
-        <MessageSquare size={14} className="flex-shrink-0 mt-0.5 text-text-secondary" />
-
-        <div className="flex-1 min-w-0">
-          <div className="text-xs text-text-primary line-clamp-1">
-            {thread.selectedText
-              ? truncateText(thread.selectedText, 60)
-              : thread.parentThreadId === null
-              ? 'Main Thread'
-              : 'Thread'}
-          </div>
-          {thread.messages.length > 0 && (
-            <div className="text-[10px] text-text-secondary mt-0.5">
-              {thread.messages.length} message{thread.messages.length !== 1 ? 's' : ''}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div>
-          {childThreads.map((childThread) => (
-            <ThreadNode
-              key={childThread.id}
-              thread={childThread}
-              allThreads={allThreads}
-              currentThreadId={currentThreadId}
-              onNavigate={onNavigate}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function ThreadTree({ threads, mainThreadId, currentThreadId, onNavigate, onClose }: ThreadTreeProps) {
-  // Find all root threads (threads with no parent)
-  const rootThreads = threads.filter(t => t.parentThreadId === null);
+  // Get the complete hierarchy path for the current thread (traverse up to root)
+  const getCurrentThreadHierarchy = (): Thread[] => {
+    const hierarchy: Thread[] = [];
+    let currentThread = threads.find(t => t.id === currentThreadId);
 
-  // Sort root threads by creation time, newest first
-  const sortedRootThreads = [...rootThreads].sort((a, b) => b.createdAt - a.createdAt);
+    // Traverse up to collect all parent threads
+    while (currentThread) {
+      hierarchy.unshift(currentThread); // Add to beginning to maintain order from root to current
+      if (currentThread.parentThreadId) {
+        currentThread = threads.find(t => t.id === currentThread!.parentThreadId);
+      } else {
+        currentThread = undefined;
+      }
+    }
+
+    return hierarchy;
+  };
+
+  const threadHierarchy = getCurrentThreadHierarchy();
+  const rootThread = threadHierarchy[0]; // First thread in hierarchy is always the root
+
+  if (!rootThread) {
+    return null; // No thread hierarchy found
+  }
 
   return (
-    <div className="fixed left-4 top-20 w-80 bg-white border border-border rounded-lg shadow-lg z-50 max-h-[calc(100vh-120px)] overflow-hidden flex flex-col">
+    <div className="fixed left-4 top-20 w-80 bg-white dark:bg-surface border border-border rounded-lg shadow-lg z-50 max-h-[calc(100vh-120px)] overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold">Conversations & Threads</h3>
+        <h3 className="text-sm font-semibold">Current Thread Path</h3>
         <button
           onClick={onClose}
           className="text-text-secondary hover:text-text-primary transition-colors"
@@ -114,71 +57,52 @@ export function ThreadTree({ threads, mainThreadId, currentThreadId, onNavigate,
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
-        {sortedRootThreads.map((rootThread, index) => {
-          const isCurrentRoot = rootThread.id === mainThreadId;
-          const childThreads = threads.filter(t => t.parentThreadId === rootThread.id);
-          const hasChildren = childThreads.length > 0;
-
-          // Get first user message for title
-          const firstUserMessage = rootThread.messages.find(m => m.role === 'user');
-          const conversationTitle = firstUserMessage?.content.slice(0, 60) || `Conversation ${sortedRootThreads.length - index}`;
-
-          const [isExpanded, setIsExpanded] = React.useState(true);
+      <div className="flex-1 overflow-y-auto p-3">
+        {threadHierarchy.map((thread, index) => {
+          const isLast = index === threadHierarchy.length - 1;
+          const isCurrent = thread.id === currentThreadId;
+          const isRoot = thread.parentThreadId === null;
 
           return (
-            <div key={rootThread.id} className="mb-3">
-              {/* Conversation header - clickable to expand/collapse */}
+            <div key={thread.id} className="mb-2">
               <button
                 onClick={() => {
-                  if (hasChildren) {
-                    setIsExpanded(!isExpanded);
-                  }
-                  onNavigate(rootThread.id);
+                  onNavigate(thread.id);
                   onClose();
                 }}
-                className={`w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-md transition-colors ${
-                  isCurrentRoot ? 'bg-accent text-white' : 'bg-surface-2 hover:bg-surface-3'
+                className={`w-full flex items-start gap-2 px-3 py-2 rounded-md transition-colors ${
+                  isCurrent
+                    ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-300 dark:border-orange-700'
+                    : 'bg-surface-2 hover:bg-surface-3 border border-transparent'
                 }`}
+                style={{ paddingLeft: `${index * 12 + 12}px` }}
               >
-                {hasChildren && (
-                  <ChevronRight
-                    size={14}
-                    className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsExpanded(!isExpanded);
-                    }}
-                  />
+                {isRoot ? (
+                  <FolderOpen size={14} className={`flex-shrink-0 mt-0.5 ${isCurrent ? 'text-orange-600 dark:text-orange-400' : 'text-text-secondary'}`} />
+                ) : (
+                  <MessageSquare size={14} className={`flex-shrink-0 mt-0.5 ${isCurrent ? 'text-orange-600 dark:text-orange-400' : 'text-text-secondary'}`} />
                 )}
-                {!hasChildren && <div className="w-3.5" />}
-                <FolderOpen size={14} className="flex-shrink-0" />
+
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-xs font-medium line-clamp-1">
-                    {conversationTitle}
+                  <div className={`text-xs line-clamp-2 ${isCurrent ? 'font-semibold text-orange-900 dark:text-orange-300' : 'text-text-primary'}`}>
+                    {thread.selectedText
+                      ? truncateText(thread.selectedText, 80)
+                      : isRoot
+                      ? 'Main Thread'
+                      : 'Thread'}
                   </div>
-                  <div className="text-[10px] opacity-70">
-                    {formatTimestamp(rootThread.createdAt)}
+                  <div className={`text-[10px] mt-0.5 ${isCurrent ? 'text-orange-700 dark:text-orange-400' : 'text-text-secondary'}`}>
+                    {thread.messages.length} message{thread.messages.length !== 1 ? 's' : ''}
+                    {' · '}
+                    {formatTimestamp(thread.createdAt)}
                   </div>
                 </div>
               </button>
 
-              {/* Child threads only - skip the root thread itself */}
-              {hasChildren && isExpanded && (
-                <div>
-                  {childThreads.map((childThread) => (
-                    <ThreadNode
-                      key={childThread.id}
-                      thread={childThread}
-                      allThreads={threads}
-                      currentThreadId={currentThreadId}
-                      onNavigate={(threadId) => {
-                        onNavigate(threadId);
-                        onClose();
-                      }}
-                      level={0}
-                    />
-                  ))}
+              {/* Visual connector to next thread in hierarchy */}
+              {!isLast && (
+                <div className="flex items-center ml-3" style={{ paddingLeft: `${index * 12 + 12}px` }}>
+                  <div className="w-px h-3 bg-border ml-1.5" />
                 </div>
               )}
             </div>
@@ -187,7 +111,7 @@ export function ThreadTree({ threads, mainThreadId, currentThreadId, onNavigate,
       </div>
 
       <div className="px-4 py-2 border-t border-border bg-surface text-xs text-text-secondary">
-        {rootThreads.length} conversation{rootThreads.length !== 1 ? 's' : ''} · {threads.length} total thread{threads.length !== 1 ? 's' : ''}
+        {threadHierarchy.length} thread{threadHierarchy.length !== 1 ? 's' : ''} in path
       </div>
     </div>
   );
