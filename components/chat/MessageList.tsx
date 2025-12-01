@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message as MessageType, Thread } from '@/types';
 import { Message } from './Message';
+import { ThreadMinimap } from './ThreadMinimap';
 import { Bot } from 'lucide-react';
 
 interface ThreadSelection {
@@ -25,6 +26,8 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [messageHeights, setMessageHeights] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     // Only auto-scroll if user isn't selecting text
@@ -40,6 +43,36 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
       highlightRef.current.scrollIntoView({ behavior: 'instant', block: 'center' });
     }
   }, [highlightMessageId]);
+
+  // Measure actual DOM heights of messages
+  useEffect(() => {
+    const measureHeights = () => {
+      const newHeights = new Map<string, number>();
+      messageRefs.current.forEach((element, messageId) => {
+        if (element) {
+          newHeights.set(messageId, element.offsetHeight);
+        }
+      });
+      setMessageHeights(newHeights);
+    };
+
+    // Measure on mount and when messages change
+    measureHeights();
+
+    // Also measure after a short delay to account for dynamic content
+    const timer = setTimeout(measureHeights, 100);
+
+    // Measure on resize
+    const resizeObserver = new ResizeObserver(measureHeights);
+    messageRefs.current.forEach((element) => {
+      if (element) resizeObserver.observe(element);
+    });
+
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+    };
+  }, [messages]);
 
   if (messages.length === 0 && !isLoading) {
     return (
@@ -57,59 +90,76 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto"
-    >
-      <div className="max-w-4xl mx-auto">
-        {messages.map((message) => {
-          const isHighlighted = message.id === highlightMessageId;
+    <div className="flex-1 overflow-y-auto relative">
+      <div
+        ref={containerRef}
+        className="h-full overflow-y-auto"
+      >
+        <div className="max-w-4xl mx-auto">
+          {messages.map((message) => {
+            const isHighlighted = message.id === highlightMessageId;
 
-          // Find child threads that branch from this message
-          const childThreads: ThreadSelection[] = allThreads
-            .filter(thread => thread.parentMessageId === message.id)
-            .map(thread => ({
-              threadId: thread.id,
-              selectedText: thread.selectedText || '',
-              messageCount: thread.messages.length,
-            }))
-            .filter(thread => thread.selectedText); // Only include threads with selectedText
+            // Find child threads that branch from this message
+            const childThreads: ThreadSelection[] = allThreads
+              .filter(thread => thread.parentMessageId === message.id)
+              .map(thread => ({
+                threadId: thread.id,
+                selectedText: thread.selectedText || '',
+                messageCount: thread.messages.length,
+              }))
+              .filter(thread => thread.selectedText); // Only include threads with selectedText
 
-          return (
-            <div
-              key={message.id}
-              ref={isHighlighted ? highlightRef : undefined}
-            >
-              <Message
-                message={message}
-                onTextSelect={onTextSelect}
-                isHighlighted={isHighlighted}
-                highlightedText={isHighlighted ? highlightedText : undefined}
-                childThreads={childThreads}
-                onNavigateToThread={onNavigateToThread}
-              />
-            </div>
-          );
-        })}
-        {isLoading && (
-          <div className="px-6 py-6 bg-background">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
-                  <Bot size={14} />
+            return (
+              <div
+                key={message.id}
+                ref={(el) => {
+                  if (el) {
+                    messageRefs.current.set(message.id, el);
+                  }
+                  if (isHighlighted && el) {
+                    (highlightRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                  }
+                }}
+              >
+                <Message
+                  message={message}
+                  onTextSelect={onTextSelect}
+                  isHighlighted={isHighlighted}
+                  highlightedText={isHighlighted ? highlightedText : undefined}
+                  childThreads={childThreads}
+                  onNavigateToThread={onNavigateToThread}
+                />
+              </div>
+            );
+          })}
+          {isLoading && (
+            <div className="px-6 py-6 bg-background">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
+                    <Bot size={14} />
+                  </div>
+                  <span className="text-sm font-medium">Claude</span>
                 </div>
-                <span className="text-sm font-medium">Claude</span>
-              </div>
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
+          )}
+          <div ref={bottomRef} />
+        </div>
       </div>
+      <ThreadMinimap
+        messages={messages}
+        containerRef={containerRef}
+        allThreads={allThreads}
+        highlightMessageId={highlightMessageId}
+        highlightedText={highlightedText}
+        messageHeights={messageHeights}
+      />
     </div>
   );
 }
