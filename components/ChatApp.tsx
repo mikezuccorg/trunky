@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { storage, createThread } from '@/lib/storage';
-import { ConversationState } from '@/types';
+import { ConversationState, Thread } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
 import { ThreadSelector } from '@/components/chat/ThreadSelector';
 import { ThreadTree } from '@/components/threading/ThreadTree';
@@ -96,7 +96,24 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
 
   const allThreads = threading.getAllThreads();
 
-  // Get current conversation tree threads
+  // Get threads only from the current conversation tree
+  const getCurrentConversationThreads = (rootThreadId: string): Thread[] => {
+    const result: Thread[] = [];
+    const collectThreadsRecursively = (threadId: string) => {
+      const thread = conversationState.threads[threadId];
+      if (thread) {
+        result.push(thread);
+        const children = allThreads.filter(t => t.parentThreadId === threadId);
+        children.forEach(child => collectThreadsRecursively(child.id));
+      }
+    };
+    collectThreadsRecursively(rootThreadId);
+    return result;
+  };
+
+  const currentConversationThreads = getCurrentConversationThreads(conversationState.mainThreadId);
+
+  // Get current conversation tree threads count
   const getCurrentTreeThreads = (rootThreadId: string): number => {
     const countThreadsRecursively = (threadId: string): number => {
       const children = allThreads.filter(t => t.parentThreadId === threadId);
@@ -152,7 +169,7 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
           onUpdateThread={threading.updateThread}
           onCloseThread={threading.closeThread}
           onTextSelect={handleTextSelect}
-          allThreads={allThreads}
+          allThreads={currentConversationThreads}
           onNavigateToThread={threading.navigateToThread}
         />
 

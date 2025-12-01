@@ -89,27 +89,121 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     em: ({ children }: any) => <em className="italic">{children}</em>,
   }), []);
 
-  // Helper function to highlight text within string content
+  // Helper function to highlight text with both active highlights and thread selections
   const highlightText = (text: string): React.ReactNode => {
-    if (!highlightedText || !text.includes(highlightedText)) {
+    // Build a list of all text ranges that need special rendering
+    const highlights: Array<{
+      start: number;
+      end: number;
+      type: 'active' | 'thread';
+      threadId?: string;
+      messageCount?: number;
+    }> = [];
+
+    // Add thread selections (grey) - do this first so active highlight can override
+    childThreads.forEach((thread) => {
+      if (thread.selectedText) {
+        let searchIndex = 0;
+        let index = text.indexOf(thread.selectedText, searchIndex);
+
+        // Find all occurrences of this selected text
+        while (index !== -1) {
+          highlights.push({
+            start: index,
+            end: index + thread.selectedText.length,
+            type: 'thread',
+            threadId: thread.threadId,
+            messageCount: thread.messageCount,
+          });
+          searchIndex = index + 1;
+          index = text.indexOf(thread.selectedText, searchIndex);
+        }
+      }
+    });
+
+    // Add active highlight (yellow) - this takes priority
+    if (isHighlighted && highlightedText) {
+      const index = text.indexOf(highlightedText);
+      if (index !== -1) {
+        // Remove any overlapping thread highlights
+        const activeStart = index;
+        const activeEnd = index + highlightedText.length;
+
+        // Filter out overlapping thread highlights
+        const nonOverlapping = highlights.filter(h => {
+          return h.end <= activeStart || h.start >= activeEnd;
+        });
+
+        highlights.length = 0;
+        highlights.push(...nonOverlapping);
+
+        highlights.push({
+          start: index,
+          end: index + highlightedText.length,
+          type: 'active',
+        });
+      }
+    }
+
+    // If no highlights, return plain text
+    if (highlights.length === 0) {
       return text;
     }
-    const parts = text.split(highlightedText);
-    return parts.map((part, i) => (
-      <span key={i}>
-        {part}
-        {i < parts.length - 1 && (
-          <mark className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
-            {highlightedText}
+
+    // Sort highlights by start position
+    highlights.sort((a, b) => a.start - b.start);
+
+    // Render text with highlights
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    highlights.forEach((highlight, i) => {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        parts.push(text.slice(lastIndex, highlight.start));
+      }
+
+      // Add highlighted text
+      const highlightedTextContent = text.slice(highlight.start, highlight.end);
+
+      if (highlight.type === 'active') {
+        parts.push(
+          <mark key={`highlight-${i}`} className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+            {highlightedTextContent}
           </mark>
-        )}
-      </span>
-    ));
+        );
+      } else if (highlight.type === 'thread') {
+        parts.push(
+          <span
+            key={`thread-${i}`}
+            onClick={() => onNavigateToThread?.(highlight.threadId!)}
+            className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 px-1 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-1 group"
+          >
+            <span>{highlightedTextContent}</span>
+            <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-medium bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded">
+              {highlight.messageCount}
+            </span>
+          </span>
+        );
+      }
+
+      lastIndex = highlight.end;
+    });
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return <>{parts}</>;
   };
 
   // Create highlighted versions of components when needed
   const getComponents = useMemo(() => {
-    if (!isUser && isHighlighted && highlightedText) {
+    // Apply highlighting for bot messages if there are active highlights or thread selections
+    const shouldApplyHighlighting = !isUser && ((isHighlighted && highlightedText) || childThreads.length > 0);
+
+    if (shouldApplyHighlighting) {
       // Create wrapper that processes children to add highlights
       const wrapWithHighlight = (Component: any, className?: string) => {
         return ({ children, ...props }: any) => {
@@ -145,99 +239,14 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
       };
     }
     return markdownComponents;
-  }, [isUser, isHighlighted, highlightedText, markdownComponents]);
+  }, [isUser, isHighlighted, highlightedText, childThreads, markdownComponents, highlightText]);
 
   // Helper to render user message content with thread selections and highlights
   const renderUserContent = useMemo(() => {
     const content = message.content;
-
-    // Build a list of all text ranges that need special rendering
-    const highlights: Array<{
-      start: number;
-      end: number;
-      type: 'active' | 'thread';
-      threadId?: string;
-      messageCount?: number;
-    }> = [];
-
-    // Add active highlight (yellow)
-    if (isHighlighted && highlightedText) {
-      const index = content.indexOf(highlightedText);
-      if (index !== -1) {
-        highlights.push({
-          start: index,
-          end: index + highlightedText.length,
-          type: 'active',
-        });
-      }
-    }
-
-    // Add thread selections (grey)
-    childThreads.forEach((thread) => {
-      const index = content.indexOf(thread.selectedText);
-      if (index !== -1) {
-        highlights.push({
-          start: index,
-          end: index + thread.selectedText.length,
-          type: 'thread',
-          threadId: thread.threadId,
-          messageCount: thread.messageCount,
-        });
-      }
-    });
-
-    // If no highlights, return plain content
-    if (highlights.length === 0) {
-      return content;
-    }
-
-    // Sort highlights by start position
-    highlights.sort((a, b) => a.start - b.start);
-
-    // Render content with highlights
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-
-    highlights.forEach((highlight, i) => {
-      // Add text before highlight
-      if (highlight.start > lastIndex) {
-        parts.push(content.slice(lastIndex, highlight.start));
-      }
-
-      // Add highlighted text
-      const highlightedText = content.slice(highlight.start, highlight.end);
-
-      if (highlight.type === 'active') {
-        parts.push(
-          <span key={`highlight-${i}`} className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
-            {highlightedText}
-          </span>
-        );
-      } else if (highlight.type === 'thread') {
-        parts.push(
-          <span
-            key={`thread-${i}`}
-            onClick={() => onNavigateToThread?.(highlight.threadId!)}
-            className="bg-gray-200 dark:bg-gray-700 border-l-2 border-gray-400 dark:border-gray-500 px-1 py-0.5 rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors inline-flex items-center gap-1 group"
-          >
-            <span>{highlightedText}</span>
-            <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-medium bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded">
-              {highlight.messageCount}
-            </span>
-          </span>
-        );
-      }
-
-      lastIndex = highlight.end;
-    });
-
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(content.slice(lastIndex));
-    }
-
-    return <>{parts}</>;
-  }, [message.content, isHighlighted, highlightedText, childThreads, onNavigateToThread]);
+    // Use the same highlightText function for consistency
+    return highlightText(content);
+  }, [message.content, highlightText]);
 
   // Helper to render content with highlighted text
   const renderContent = useMemo(() => {
