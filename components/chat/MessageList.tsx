@@ -34,10 +34,10 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
     }
   }, [messages.length]);
 
-  // Scroll to highlighted message when it exists
+  // Scroll to highlighted message when it exists - instant scroll for thread navigation
   useEffect(() => {
     if (highlightMessageId && highlightRef.current) {
-      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlightRef.current.scrollIntoView({ behavior: 'instant', block: 'center' });
     }
   }, [highlightMessageId]);
 
