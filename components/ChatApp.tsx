@@ -137,20 +137,24 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
             <Plus size={14} />
             New Conversation
           </button>
-          <button
-            onClick={() => setShowConversationSelector(!showConversationSelector)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
-          >
-            <FolderOpen size={14} />
-            {rootThreadCount} conversation{rootThreadCount !== 1 ? 's' : ''}
-          </button>
-          <button
-            onClick={() => setShowThreadTree(!showThreadTree)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
-          >
-            <Network size={14} />
-            {currentTreeThreadCount} thread{currentTreeThreadCount !== 1 ? 's' : ''}
-          </button>
+          {/* Conjoined conversation and threads buttons */}
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowConversationSelector(!showConversationSelector)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-l-md hover:bg-surface-2 transition-colors"
+            >
+              <FolderOpen size={14} />
+              {rootThreadCount} conversation{rootThreadCount !== 1 ? 's' : ''}
+            </button>
+            <div className="h-6 w-px bg-border" />
+            <button
+              onClick={() => setShowThreadTree(!showThreadTree)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-l-0 border-border rounded-r-md hover:bg-surface-2 transition-colors"
+            >
+              <Network size={14} />
+              {currentTreeThreadCount} thread{currentTreeThreadCount !== 1 ? 's' : ''}
+            </button>
+          </div>
         </div>
         <button
           onClick={() => setShowApiKeyModal(true)}
@@ -181,6 +185,7 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
           <ConversationSelector
             threads={allThreads}
             mainThreadId={conversationState.mainThreadId}
+            currentThreadId={conversationState.currentThreadId}
             onNavigate={threading.navigateToThread}
             onClose={() => setShowConversationSelector(false)}
           />

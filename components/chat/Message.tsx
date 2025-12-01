@@ -168,9 +168,15 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
 
       if (highlight.type === 'active') {
         parts.push(
-          <mark key={`highlight-${i}`} className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
-            {highlightedTextContent}
-          </mark>
+          <span
+            key={`highlight-${i}`}
+            className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-600 dark:border-yellow-500 px-1 py-0.5 rounded inline-flex items-center gap-1 group"
+          >
+            <span>{highlightedTextContent}</span>
+            <span className="inline-flex items-center justify-center px-1.5 h-4 text-[9px] font-bold bg-yellow-600 dark:bg-yellow-500 text-white rounded uppercase tracking-wide">
+              ACTIVE
+            </span>
+          </span>
         );
       } else if (highlight.type === 'thread') {
         parts.push(
