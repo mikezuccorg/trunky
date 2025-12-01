@@ -10,6 +10,8 @@ interface ThreadManagerProps {
   onUpdateThread: (thread: Thread) => void;
   onCloseThread: (threadId: string) => void;
   onTextSelect: (text: string, messageId: string, threadId: string) => void;
+  allThreads?: Thread[]; // All threads for finding child thread selections
+  onNavigateToThread?: (threadId: string) => void;
 }
 
 export function ThreadManager({
@@ -19,6 +21,8 @@ export function ThreadManager({
   onUpdateThread,
   onCloseThread,
   onTextSelect,
+  allThreads = [],
+  onNavigateToThread,
 }: ThreadManagerProps) {
   // Show only 2 threads: parent (left) and current (right)
   // This creates a clear hierarchical view
@@ -56,6 +60,8 @@ export function ThreadManager({
               }
               onTextSelect={onTextSelect}
               childThreads={getChildThreads(thread.id, threads)}
+              allThreads={allThreads}
+              onNavigateToThread={onNavigateToThread}
             />
           </div>
         );

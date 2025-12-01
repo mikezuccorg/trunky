@@ -14,6 +14,8 @@ interface ChatInterfaceProps {
   onTextSelect?: (text: string, messageId: string, threadId: string) => void;
   childThreads?: Thread[]; // Child threads spawned from this thread
   onClose?: () => void; // Close button handler for child threads
+  allThreads?: Thread[]; // All threads for finding child thread selections
+  onNavigateToThread?: (threadId: string) => void;
 }
 
 export function ChatInterface({
@@ -23,6 +25,8 @@ export function ChatInterface({
   onTextSelect,
   childThreads = [],
   onClose,
+  allThreads = [],
+  onNavigateToThread,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(thread.messages);
   const [settings, setSettings] = useState<ChatSettingsType>(
@@ -148,6 +152,8 @@ export function ChatInterface({
         isLoading={isLoading}
         highlightMessageId={highlightInfo.messageId}
         highlightedText={highlightInfo.text}
+        allThreads={allThreads}
+        onNavigateToThread={onNavigateToThread}
       />
 
       {/* Error display */}

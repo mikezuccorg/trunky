@@ -11,6 +11,8 @@ interface ThreadPaneProps {
   onClose?: () => void;
   onTextSelect?: (text: string, messageId: string, threadId: string) => void;
   childThreads?: Thread[];
+  allThreads?: Thread[];
+  onNavigateToThread?: (threadId: string) => void;
 }
 
 export function ThreadPane({
@@ -21,6 +23,8 @@ export function ThreadPane({
   onClose,
   onTextSelect,
   childThreads = [],
+  allThreads = [],
+  onNavigateToThread,
 }: ThreadPaneProps) {
   return (
     <div className="flex flex-col h-full border-r border-border last:border-r-0 animate-in slide-in-from-right duration-300">
@@ -31,6 +35,8 @@ export function ThreadPane({
         onTextSelect={onTextSelect}
         childThreads={childThreads}
         onClose={onClose}
+        allThreads={allThreads}
+        onNavigateToThread={onNavigateToThread}
       />
     </div>
   );

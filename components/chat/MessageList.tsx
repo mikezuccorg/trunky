@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Message as MessageType } from '@/types';
+import { Message as MessageType, Thread } from '@/types';
 import { Message } from './Message';
 import { Bot } from 'lucide-react';
+
+interface ThreadSelection {
+  threadId: string;
+  selectedText: string;
+  messageCount: number;
+}
 
 interface MessageListProps {
   messages: MessageType[];
@@ -11,9 +17,11 @@ interface MessageListProps {
   isLoading?: boolean;
   highlightMessageId?: string;
   highlightedText?: string;
+  allThreads?: Thread[]; // All threads to find child threads
+  onNavigateToThread?: (threadId: string) => void;
 }
 
-export function MessageList({ messages, onTextSelect, isLoading, highlightMessageId, highlightedText }: MessageListProps) {
+export function MessageList({ messages, onTextSelect, isLoading, highlightMessageId, highlightedText, allThreads = [], onNavigateToThread }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
@@ -56,6 +64,17 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
       <div className="max-w-4xl mx-auto">
         {messages.map((message) => {
           const isHighlighted = message.id === highlightMessageId;
+
+          // Find child threads that branch from this message
+          const childThreads: ThreadSelection[] = allThreads
+            .filter(thread => thread.parentMessageId === message.id)
+            .map(thread => ({
+              threadId: thread.id,
+              selectedText: thread.selectedText || '',
+              messageCount: thread.messages.length,
+            }))
+            .filter(thread => thread.selectedText); // Only include threads with selectedText
+
           return (
             <div
               key={message.id}
@@ -66,6 +85,8 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
                 onTextSelect={onTextSelect}
                 isHighlighted={isHighlighted}
                 highlightedText={isHighlighted ? highlightedText : undefined}
+                childThreads={childThreads}
+                onNavigateToThread={onNavigateToThread}
               />
             </div>
           );

@@ -152,6 +152,8 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
           onUpdateThread={threading.updateThread}
           onCloseThread={threading.closeThread}
           onTextSelect={handleTextSelect}
+          allThreads={allThreads}
+          onNavigateToThread={threading.navigateToThread}
         />
 
         {pendingSelection && (

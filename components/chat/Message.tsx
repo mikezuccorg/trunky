@@ -1,20 +1,28 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Message as MessageType } from '@/types';
+import { Message as MessageType, Thread } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
 import { Bot, Brain, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+interface ThreadSelection {
+  threadId: string;
+  selectedText: string;
+  messageCount: number;
+}
 
 interface MessageProps {
   message: MessageType;
   onTextSelect?: (text: string, messageId: string) => void;
   isHighlighted?: boolean;
   highlightedText?: string;
+  childThreads?: ThreadSelection[]; // Threads that branch from this message
+  onNavigateToThread?: (threadId: string) => void;
 }
 
-export function Message({ message, onTextSelect, isHighlighted, highlightedText }: MessageProps) {
+export function Message({ message, onTextSelect, isHighlighted, highlightedText, childThreads = [], onNavigateToThread }: MessageProps) {
   const isUser = message.role === 'user';
   const isInherited = message.isInherited || false;
   const [showThinking, setShowThinking] = useState(false);
@@ -139,6 +147,98 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
     return markdownComponents;
   }, [isUser, isHighlighted, highlightedText, markdownComponents]);
 
+  // Helper to render user message content with thread selections and highlights
+  const renderUserContent = useMemo(() => {
+    const content = message.content;
+
+    // Build a list of all text ranges that need special rendering
+    const highlights: Array<{
+      start: number;
+      end: number;
+      type: 'active' | 'thread';
+      threadId?: string;
+      messageCount?: number;
+    }> = [];
+
+    // Add active highlight (yellow)
+    if (isHighlighted && highlightedText) {
+      const index = content.indexOf(highlightedText);
+      if (index !== -1) {
+        highlights.push({
+          start: index,
+          end: index + highlightedText.length,
+          type: 'active',
+        });
+      }
+    }
+
+    // Add thread selections (grey)
+    childThreads.forEach((thread) => {
+      const index = content.indexOf(thread.selectedText);
+      if (index !== -1) {
+        highlights.push({
+          start: index,
+          end: index + thread.selectedText.length,
+          type: 'thread',
+          threadId: thread.threadId,
+          messageCount: thread.messageCount,
+        });
+      }
+    });
+
+    // If no highlights, return plain content
+    if (highlights.length === 0) {
+      return content;
+    }
+
+    // Sort highlights by start position
+    highlights.sort((a, b) => a.start - b.start);
+
+    // Render content with highlights
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    highlights.forEach((highlight, i) => {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        parts.push(content.slice(lastIndex, highlight.start));
+      }
+
+      // Add highlighted text
+      const highlightedText = content.slice(highlight.start, highlight.end);
+
+      if (highlight.type === 'active') {
+        parts.push(
+          <span key={`highlight-${i}`} className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
+            {highlightedText}
+          </span>
+        );
+      } else if (highlight.type === 'thread') {
+        parts.push(
+          <span
+            key={`thread-${i}`}
+            onClick={() => onNavigateToThread?.(highlight.threadId!)}
+            className="bg-gray-200 dark:bg-gray-700 border-l-2 border-gray-400 dark:border-gray-500 px-1 py-0.5 rounded cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors inline-flex items-center gap-1 group"
+          >
+            <span>{highlightedText}</span>
+            <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-medium bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded">
+              {highlight.messageCount}
+            </span>
+          </span>
+        );
+      }
+
+      lastIndex = highlight.end;
+    });
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.slice(lastIndex));
+    }
+
+    return <>{parts}</>;
+  }, [message.content, isHighlighted, highlightedText, childThreads, onNavigateToThread]);
+
   // Helper to render content with highlighted text
   const renderContent = useMemo(() => {
     const content = message.content;
@@ -155,28 +255,9 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText 
       );
     }
 
-    // For user messages, handle highlighting
-    if (isHighlighted && highlightedText) {
-      const index = content.indexOf(highlightedText);
-      if (index !== -1) {
-        const before = content.slice(0, index);
-        const highlighted = content.slice(index, index + highlightedText.length);
-        const after = content.slice(index + highlightedText.length);
-
-        return (
-          <>
-            {before}
-            <span className="bg-highlight border-l-2 border-highlight-border px-1 py-0.5 rounded">
-              {highlighted}
-            </span>
-            {after}
-          </>
-        );
-      }
-    }
-
-    return content;
-  }, [message.content, isUser, isHighlighted, highlightedText, getComponents]);
+    // For user messages, use the new render function with thread selections
+    return renderUserContent;
+  }, [message.content, isUser, getComponents, renderUserContent]);
 
   return (
     <div
