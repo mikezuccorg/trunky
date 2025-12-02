@@ -70,6 +70,11 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
 
   const handleCreateThread = () => {
     if (pendingSelection && conversationState) {
+      // Copy selected text to clipboard
+      navigator.clipboard.writeText(pendingSelection.text).catch(err => {
+        console.error('Failed to copy text to clipboard:', err);
+      });
+
       threading.createNewThread(
         pendingSelection.threadId,
         pendingSelection.messageId,

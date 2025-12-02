@@ -28,7 +28,10 @@ export function ChatInterface({
   allThreads = [],
   onNavigateToThread,
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>(thread.messages);
+  // Filter out inherited messages from parent threads - users can view them on the left
+  const [messages, setMessages] = useState<Message[]>(
+    thread.messages.filter(msg => !msg.isInherited)
+  );
   const [settings, setSettings] = useState<ChatSettingsType>(
     thread.settings || {
       model: 'claude-sonnet-4-20250514',
@@ -40,7 +43,8 @@ export function ChatInterface({
   // Update messages when thread ID changes (navigating to different thread)
   // Don't sync on messages array changes to prevent clearing user selections
   useEffect(() => {
-    setMessages(thread.messages);
+    // Filter out inherited messages from parent threads
+    setMessages(thread.messages.filter(msg => !msg.isInherited));
     setSettings(thread.settings || {
       model: 'claude-sonnet-4-20250514',
       maxTokens: 4096,

@@ -302,8 +302,9 @@ export function ThreadMinimap({
     if (!canvas || !container) return;
 
     const rect = canvas.getBoundingClientRect();
-    const clickY = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    const percentage = clickY / rect.height;
+    // Adjust clickY to use the viewport's vertical center as the reference origin
+    const clickY = Math.max(0, Math.min(clientY - rect.top - (viewportHeight / 2), rect.height - viewportHeight));
+    const percentage = clickY / (rect.height - viewportHeight);
 
     container.scrollTop = percentage * (container.scrollHeight - container.clientHeight);
   };
