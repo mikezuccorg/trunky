@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Trunky - Threaded Chat",
   description: "A threaded conversation interface for Claude AI",
+  icons: {
+    icon: '/icon.ico',
+  },
 };
 
 export default function RootLayout({

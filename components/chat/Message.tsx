@@ -65,15 +65,85 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     }
   };
 
+  // Helper to process citation references in text
+  const processCitationReferences = useCallback((text: string): React.ReactNode => {
+    const citations = message.metadata?.citations || [];
+    if (citations.length === 0) return text;
+
+    // Match citation references like [1], [2], etc.
+    const citationRegex = /\[(\d+)\]/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = citationRegex.exec(text)) !== null) {
+      const fullMatch = match[0]; // e.g., "[2]"
+      const citationNumber = parseInt(match[1], 10);
+      const citationIndex = citationNumber - 1;
+      const citation = citations[citationIndex];
+
+      // Add text before citation
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      // Add citation link
+      if (citation) {
+        parts.push(
+          <a
+            key={`citation-${match.index}`}
+            href={citation.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline font-mono text-sm"
+            title={citation.title}
+          >
+            {fullMatch}
+          </a>
+        );
+      } else {
+        // If citation doesn't exist (still streaming), show as plain text
+        parts.push(fullMatch);
+      }
+
+      lastIndex = match.index + fullMatch.length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? <>{parts}</> : text;
+  }, [message.metadata?.citations]);
+
   // Memoize markdown components to prevent re-creation on every render
   const markdownComponents = useMemo<Components>(() => ({
-    p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+    p: ({ children }) => {
+      // Process citation references in paragraph text
+      const processedChildren = React.Children.map(children, child => {
+        if (typeof child === 'string') {
+          return processCitationReferences(child);
+        }
+        return child;
+      });
+      return <p className="mb-4 last:mb-0">{processedChildren}</p>;
+    },
     h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
     h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
     h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
     ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
     ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-    li: ({ children }) => <li className="ml-4">{children}</li>,
+    li: ({ children }) => {
+      // Process citation references in list items
+      const processedChildren = React.Children.map(children, child => {
+        if (typeof child === 'string') {
+          return processCitationReferences(child);
+        }
+        return child;
+      });
+      return <li className="ml-4">{processedChildren}</li>;
+    },
     code: ({ className, children, ...props }) => {
       // Extract language from className (format: language-xxx)
       const match = /language-(\w+)/.exec(className || '');
@@ -123,10 +193,20 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     ),
     strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
     em: ({ children }) => <em className="italic">{children}</em>,
-  }), []);
+  }), [processCitationReferences]);
 
   // Helper function to highlight text with both active highlights and thread selections
   const highlightText = useCallback((text: string): React.ReactNode => {
+    // First, process citation references
+    const textWithCitations = processCitationReferences(text);
+
+    // If citation processing returned React nodes, we need to handle it differently
+    // For now, we'll only apply highlights to plain text
+    if (React.isValidElement(textWithCitations) || Array.isArray(textWithCitations)) {
+      // Text contains citations, skip highlighting to avoid conflicts
+      return textWithCitations;
+    }
+
     // Build a list of all text ranges that need special rendering
     const highlights: Array<{
       start: number;
@@ -238,7 +318,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     }
 
     return <>{parts}</>;
-  }, [isHighlighted, highlightedText, childThreads, onNavigateToThread]);
+  }, [isHighlighted, highlightedText, childThreads, onNavigateToThread, processCitationReferences]);
 
   // Create highlighted versions of components when needed
   const getComponents = useMemo(() => {
