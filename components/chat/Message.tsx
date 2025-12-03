@@ -68,15 +68,22 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
               <span className="text-xs font-medium text-text-secondary uppercase">{language}</span>
             </div>
           )}
-          <pre className="overflow-x-auto">
-            <code className="block px-4 py-3 text-sm font-mono leading-relaxed text-text-primary" {...props}>
+          <pre className="overflow-x-auto whitespace-pre">
+            <code className="block px-4 py-3 text-sm font-mono leading-relaxed text-text-primary whitespace-pre" {...props}>
               {children}
             </code>
           </pre>
         </div>
       );
     },
-    pre: ({ children }) => <>{children}</>,
+    pre: ({ children }) => {
+      // Handle standalone pre tags (text-based graphics not in code blocks)
+      return (
+        <pre className="my-4 overflow-x-auto whitespace-pre font-mono text-sm leading-tight text-text-primary bg-surface px-4 py-3 rounded-lg border border-border">
+          {children}
+        </pre>
+      );
+    },
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
         {children}
