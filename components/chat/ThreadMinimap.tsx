@@ -18,6 +18,7 @@ interface MessageLayout {
   height: number;
   lines: { text: string; width: number }[];
   hasCode: boolean;
+  codeBlocks: { startLine: number; endLine: number }[];
   threadSelections: { text: string; startLine: number; endLine: number }[];
 }
 
@@ -70,12 +71,43 @@ export function ThreadMinimap({
         return wrappedLines;
       });
 
+      // Detect code blocks (```...```)
+      const codeBlocks: { startLine: number; endLine: number }[] = [];
+      const contentLines = message.content.split('\n');
+      let inCodeBlock = false;
+      let codeBlockStart = -1;
+      let lineCount = 0;
+
+      contentLines.forEach((line, idx) => {
+        if (line.trim().startsWith('```')) {
+          if (!inCodeBlock) {
+            // Start of code block
+            inCodeBlock = true;
+            codeBlockStart = lineCount;
+          } else {
+            // End of code block
+            inCodeBlock = false;
+            if (codeBlockStart !== -1) {
+              codeBlocks.push({
+                startLine: codeBlockStart,
+                endLine: lineCount
+              });
+              codeBlockStart = -1;
+            }
+          }
+        }
+        // Count wrapped lines for this content line
+        const wrappedCount = Math.max(1, Math.ceil(line.length / CHARS_PER_LINE));
+        lineCount += wrappedCount;
+      });
+
       const layout: MessageLayout = {
         messageId: message.id,
         startY: currentY,
         height: scaledHeight,
         lines,
         hasCode: message.content.includes('```'),
+        codeBlocks,
         threadSelections: []
       };
 
@@ -199,19 +231,31 @@ export function ThreadMinimap({
       const isUser = message.role === 'user';
       const isHighlighted = message.id === highlightMessageId;
 
-      // Draw message background
+      // Draw left border for user messages
       if (isUser) {
-        ctx.fillStyle = isDark ? 'rgba(96, 165, 250, 0.25)' : 'rgba(59, 130, 246, 0.2)';
-      } else {
-        ctx.fillStyle = isDark ? 'rgba(134, 239, 172, 0.2)' : 'rgba(74, 222, 128, 0.15)';
+        ctx.fillStyle = isDark ? 'rgba(96, 165, 250, 0.7)' : 'rgba(59, 130, 246, 0.6)';
+        ctx.fillRect(padding + 2, layout.startY, 2, layout.height);
       }
-      ctx.fillRect(padding, layout.startY, width - padding * 2, layout.height);
 
       // Draw accurate line representations
       const scaledLineHeight = Math.max((layout.height - 4) / layout.lines.length, 1);
+
+      const lineHasBeenFilledAlreadyCache: { [key: number]: boolean } = {};
+
+      // Draw code block representations with distinct styling
+      layout.codeBlocks.forEach((block) => {
+        const blockStartY = layout.startY + 2 + (block.startLine * scaledLineHeight);
+        const blockHeight = ((block.endLine - block.startLine + 1) * scaledLineHeight);
+
+        // Draw left border accent for code blocks
+        ctx.fillStyle = isDark ? 'rgba(100, 116, 139, 0.7)' : 'rgba(71, 85, 105, 0.6)';
+        ctx.fillRect(padding + 2, blockStartY, 2, blockHeight);
+        lineHasBeenFilledAlreadyCache[blockStartY] = true;
+      });
+
       ctx.fillStyle = isDark
-        ? (isUser ? 'rgba(59, 130, 246, 0.5)' : 'rgba(74, 222, 128, 0.4)')
-        : (isUser ? 'rgba(37, 99, 235, 0.4)' : 'rgba(34, 197, 94, 0.3)');
+        ? (isUser ? 'rgba(59, 130, 246, 0.5)' : 'rgba(148, 163, 184, 0.5)')
+        : (isUser ? 'rgba(37, 99, 235, 0.4)' : 'rgba(100, 116, 139, 0.4)');
 
       layout.lines.forEach((line, lineIndex) => {
         if (line.text.trim().length === 0) return;
@@ -219,7 +263,14 @@ export function ThreadMinimap({
         const lineY = layout.startY + 2 + (lineIndex * scaledLineHeight);
         const lineWidth = (width - padding * 3) * line.width;
 
-        ctx.fillRect(padding + 4, lineY, lineWidth, Math.max(scaledLineHeight * 0.6, 1));
+        if (lineHasBeenFilledAlreadyCache[lineY]) {
+          // code block line
+          ctx.fillStyle = isDark ? 'rgba(120, 113, 108, 0.8)' : 'rgba(87, 83, 78, 0.7)';
+          ctx.fillRect(padding + 4, lineY, lineWidth, Math.max(scaledLineHeight * 0.6, 1));
+        } else {
+          // regular line
+          ctx.fillRect(padding + 4, lineY, lineWidth, Math.max(scaledLineHeight * 0.6, 1));
+        }
       });
 
       // Draw thread selection highlights
