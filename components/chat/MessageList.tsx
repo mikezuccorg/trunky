@@ -108,10 +108,10 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
   }
 
   return (
-    <div className="flex-1 overflow-y-auto relative">
+    <div className="flex-1 flex overflow-hidden">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto"
+        className="flex-1 overflow-y-auto"
       >
         <div className="max-w-4xl mx-auto">
           {messages.map((message) => {

@@ -387,7 +387,7 @@ export function ThreadMinimap({
   return (
     <div
       ref={minimapRef}
-      className="absolute right-0 top-0 bottom-0 w-20 border-l border-border/50 bg-gradient-to-l from-surface/80 to-surface/40 backdrop-blur-sm z-10 hover:from-surface/90 hover:to-surface/60 transition-all duration-200"
+      className="w-20 flex-shrink-0 border-l border-border/50 bg-gradient-to-l from-surface/80 to-surface/40 backdrop-blur-sm hover:from-surface/90 hover:to-surface/60 transition-all duration-200"
     >
       <canvas
         ref={canvasRef}
