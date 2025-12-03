@@ -9,7 +9,7 @@ const FONT_SETTINGS_STORAGE = 'trunky_font_settings';
 
 export interface FontSettings {
   fontSize: 'small' | 'medium' | 'large' | 'x-large';
-  fontFamily: 'system' | 'serif' | 'mono';
+  fontFamily: 'system' | 'sans' | 'serif' | 'mono';
 }
 
 export const storage = {

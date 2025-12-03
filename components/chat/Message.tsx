@@ -50,6 +50,8 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
     switch (fontSettings.fontFamily) {
       case 'system':
         return '';
+      case 'sans':
+        return 'font-sans';
       case 'serif':
         return 'font-serif';
       case 'mono':
@@ -146,7 +148,10 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
   }, [message.metadata?.citations]);
 
   // Memoize markdown components to prevent re-creation on every render
-  const markdownComponents = useMemo<Components>(() => ({
+  const markdownComponents = useMemo<Components>(() => {
+    const fontClasses = `${getFontSizeClass()} ${getFontFamilyClass()}`;
+
+    return {
     p: ({ children }) => {
       // Process citation references in paragraph text
       const processedChildren = React.Children.map(children, child => {
@@ -155,13 +160,13 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         }
         return child;
       });
-      return <p className="mb-4 last:mb-0">{processedChildren}</p>;
+      return <p className={`mb-4 last:mb-0 ${fontClasses}`}>{processedChildren}</p>;
     },
-    h1: ({ children }) => <h1 className="text-2xl font-semibold mb-4 mt-6 first:mt-0">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 mt-5 first:mt-0">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>,
-    ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
+    h1: ({ children }) => <h1 className={`text-2xl font-semibold mb-4 mt-6 first:mt-0 ${fontClasses}`}>{children}</h1>,
+    h2: ({ children }) => <h2 className={`text-xl font-semibold mb-3 mt-5 first:mt-0 ${fontClasses}`}>{children}</h2>,
+    h3: ({ children }) => <h3 className={`text-lg font-semibold mb-2 mt-4 first:mt-0 ${fontClasses}`}>{children}</h3>,
+    ul: ({ children }) => <ul className={`list-disc list-inside mb-4 space-y-1 ${fontClasses}`}>{children}</ul>,
+    ol: ({ children }) => <ol className={`list-decimal list-inside mb-4 space-y-1 ${fontClasses}`}>{children}</ol>,
     li: ({ children }) => {
       // Process citation references in list items
       const processedChildren = React.Children.map(children, child => {
@@ -170,7 +175,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         }
         return child;
       });
-      return <li className="ml-4">{processedChildren}</li>;
+      return <li className={`ml-4 ${fontClasses}`}>{processedChildren}</li>;
     },
     code: ({ className, children, ...props }) => {
       // Extract language from className (format: language-xxx)
@@ -210,18 +215,19 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
       );
     },
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-border pl-4 italic my-4 text-text-secondary">
+      <blockquote className={`border-l-4 border-border pl-4 italic my-4 text-text-secondary ${fontClasses}`}>
         {children}
       </blockquote>
     ),
     a: ({ children, href }) => (
-      <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
+      <a href={href} className={`text-blue-500 hover:underline ${fontClasses}`} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
     ),
-    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-    em: ({ children }) => <em className="italic">{children}</em>,
-  }), [processCitationReferences]);
+    strong: ({ children }) => <strong className={`font-semibold ${fontClasses}`}>{children}</strong>,
+    em: ({ children }) => <em className={`italic ${fontClasses}`}>{children}</em>,
+  };
+  }, [processCitationReferences, fontSettings]);
 
   // Helper function to highlight text with both active highlights and thread selections
   const highlightText = useCallback((text: string): React.ReactNode => {
@@ -352,6 +358,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
   const getComponents = useMemo(() => {
     // Apply highlighting for bot messages if there are active highlights or thread selections
     const shouldApplyHighlighting = !isUser && ((isHighlighted && highlightedText) || childThreads.length > 0);
+    const fontClasses = `${getFontSizeClass()} ${getFontFamilyClass()}`;
 
     if (shouldApplyHighlighting) {
       // Create wrapper that processes children to add highlights
@@ -367,7 +374,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
             return child;
           };
 
-          return React.createElement(Component, { className, ...props }, processChildren(children));
+          return React.createElement(Component, { className: `${className} ${fontClasses}`, ...props }, processChildren(children));
         };
         WrappedComponent.displayName = `Highlighted${Component}`;
         return WrappedComponent;
@@ -391,7 +398,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
       } as Components;
     }
     return markdownComponents;
-  }, [isUser, isHighlighted, highlightedText, childThreads, markdownComponents, highlightText]);
+  }, [isUser, isHighlighted, highlightedText, childThreads, markdownComponents, highlightText, fontSettings]);
 
   // Helper to render user message content with thread selections and highlights
   const renderUserContent = useMemo(() => {

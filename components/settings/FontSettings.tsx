@@ -77,6 +77,16 @@ export function FontSettings({ currentSettings, onSettingsChange }: FontSettings
                   System
                 </button>
                 <button
+                  onClick={() => handleFontFamilyChange('sans')}
+                  className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-surface transition-colors font-sans ${
+                    currentSettings.fontFamily === 'sans'
+                      ? 'bg-surface-2 font-medium'
+                      : ''
+                  }`}
+                >
+                  Sans Serif
+                </button>
+                <button
                   onClick={() => handleFontFamilyChange('serif')}
                   className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-surface transition-colors font-serif ${
                     currentSettings.fontFamily === 'serif'
