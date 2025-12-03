@@ -265,7 +265,7 @@ export function ThreadMinimap({
 
         if (lineHasBeenFilledAlreadyCache[lineY]) {
           // code block line
-          ctx.fillStyle = isDark ? 'rgba(120, 113, 108, 0.8)' : 'rgba(87, 83, 78, 0.7)';
+          // ctx.fillStyle = isDark ? 'rgba(120, 113, 108, 0.8)' : 'rgba(87, 83, 78, 0.7)';
           ctx.fillRect(padding + 4, lineY, lineWidth, Math.max(scaledLineHeight * 0.6, 1));
         } else {
           // regular line
