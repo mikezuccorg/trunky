@@ -2,6 +2,7 @@ import { ConversationState, Thread, Message } from '@/types';
 
 const STORAGE_KEY = 'trunky_conversations';
 const API_KEY_STORAGE = 'trunky_api_key';
+const LAST_MODEL_STORAGE = 'trunky_last_model';
 
 export const storage = {
   saveConversations: (state: ConversationState): void => {
@@ -47,10 +48,28 @@ export const storage = {
     }
   },
 
+  saveLastModel: (model: string): void => {
+    try {
+      localStorage.setItem(LAST_MODEL_STORAGE, model);
+    } catch (error) {
+      console.error('Failed to save last model:', error);
+    }
+  },
+
+  loadLastModel: (): string => {
+    try {
+      return localStorage.getItem(LAST_MODEL_STORAGE) || 'claude-haiku-4-5-20251001';
+    } catch (error) {
+      console.error('Failed to load last model:', error);
+      return 'claude-haiku-4-5-20251001';
+    }
+  },
+
   clearAll: (): void => {
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(API_KEY_STORAGE);
+      localStorage.removeItem(LAST_MODEL_STORAGE);
     } catch (error) {
       console.error('Failed to clear storage:', error);
     }

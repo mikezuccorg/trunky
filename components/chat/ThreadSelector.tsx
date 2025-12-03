@@ -5,18 +5,18 @@ import { GitBranch } from 'lucide-react';
 
 interface ThreadSelectorProps {
   onCreateThread: () => void;
+  selectedText: string;
 }
 
-export function ThreadSelector({ onCreateThread }: ThreadSelectorProps) {
+export function ThreadSelector({ onCreateThread, selectedText }: ThreadSelectorProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const [selectedText, setSelectedText] = useState<string>('');
 
   useEffect(() => {
     const handleSelectionChange = () => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
 
-      if (text && text.length > 0) {
+      if (text && text.length > 0 && text === selectedText) {
         const range = selection?.getRangeAt(0);
         if (range) {
           const rect = range.getBoundingClientRect();
@@ -24,20 +24,19 @@ export function ThreadSelector({ onCreateThread }: ThreadSelectorProps) {
             x: rect.left + rect.width / 2,
             y: rect.top - 10,
           });
-          setSelectedText(text);
         }
-      } else {
+      } else if (!text || text.length === 0) {
         setPosition(null);
-        setSelectedText('');
       }
     };
 
+    handleSelectionChange(); // Call immediately to position button
     document.addEventListener('selectionchange', handleSelectionChange);
 
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
     };
-  }, []);
+  }, [selectedText]);
 
   if (!position || !selectedText) {
     return null;

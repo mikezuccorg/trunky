@@ -5,6 +5,7 @@ import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 import { useChat } from '@/hooks/useChat';
+import { storage } from '@/lib/storage';
 import { X } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -34,7 +35,7 @@ export function ChatInterface({
   );
   const [settings, setSettings] = useState<ChatSettingsType>(
     thread.settings || {
-      model: 'claude-sonnet-4-20250514',
+      model: storage.loadLastModel(),
       maxTokens: 4096,
       extendedThinking: false,
     }
@@ -46,7 +47,7 @@ export function ChatInterface({
     // Filter out inherited messages from parent threads
     setMessages(thread.messages.filter(msg => !msg.isInherited));
     setSettings(thread.settings || {
-      model: 'claude-sonnet-4-20250514',
+      model: storage.loadLastModel(),
       maxTokens: 4096,
       extendedThinking: false,
     });
@@ -98,6 +99,8 @@ export function ChatInterface({
 
   const handleSettingsChange = (newSettings: ChatSettingsType) => {
     setSettings(newSettings);
+    // Save the selected model for future use
+    storage.saveLastModel(newSettings.model);
     // Update thread with new settings
     const updatedThread = {
       ...thread,

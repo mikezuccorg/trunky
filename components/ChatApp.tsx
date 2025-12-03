@@ -183,7 +183,10 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
         />
 
         {pendingSelection && (
-          <ThreadSelector onCreateThread={handleCreateThread} />
+          <ThreadSelector
+            onCreateThread={handleCreateThread}
+            selectedText={pendingSelection.text}
+          />
         )}
 
         {showConversationSelector && (
