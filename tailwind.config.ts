@@ -9,16 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#FFFFFF",
-        surface: "#FAFAFA",
-        "surface-2": "#F5F5F5",
-        "surface-3": "#EEEEEE",
+        background: "#F9F5F0",
+        surface: "#F5F0EA",
+        "surface-2": "#F0EBE5",
+        "surface-3": "#EBE6E0",
         "text-primary": "#2C2C2C",
         "text-secondary": "#6B6B6B",
-        border: "#E5E5E5",
+        border: "#E6E1DB",
         accent: "#000000",
-        "user-message": "#F0F0F0",
-        "assistant-message": "#FFFFFF",
+        "user-message": "#F0EBE5",
+        "assistant-message": "#F9F5F0",
         "highlight": "#FFF4E6",
         "highlight-border": "#FFE0B2",
       },
