@@ -29,6 +29,24 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [messageHeights, setMessageHeights] = useState<Map<string, number>>(new Map());
 
+  // Recursively count messages in a thread and all its children
+  const countThreadMessages = (threadId: string): number => {
+    const thread = allThreads.find(t => t.id === threadId);
+    if (!thread) return 0;
+
+    // Count non-inherited messages in this thread
+    const ownMessages = thread.messages.filter(msg => !msg.isInherited).length;
+
+    // Find and count messages from all child threads recursively
+    const childThreads = allThreads.filter(t => t.parentThreadId === threadId);
+    const childMessagesCount = childThreads.reduce(
+      (sum, child) => sum + countThreadMessages(child.id),
+      0
+    );
+
+    return ownMessages + childMessagesCount;
+  };
+
   useEffect(() => {
     // Only auto-scroll if user isn't selecting text
     const selection = window.getSelection();
@@ -105,7 +123,7 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
               .map(thread => ({
                 threadId: thread.id,
                 selectedText: thread.selectedText || '',
-                messageCount: thread.messages.length,
+                messageCount: countThreadMessages(thread.id),
               }))
               .filter(thread => thread.selectedText); // Only include threads with selectedText
 
