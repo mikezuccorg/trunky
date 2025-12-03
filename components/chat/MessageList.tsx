@@ -97,7 +97,7 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center space-y-2">
           <p className="text-text-secondary text-sm">
-            Start a conversation with Claude
+            Starting a Thread
           </p>
           <p className="text-text-secondary text-xs">
             Select any text to create a threaded conversation
@@ -157,7 +157,7 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
                   <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
                     <Bot size={14} />
                   </div>
-                  <span className="text-sm font-medium">Claude</span>
+                  <span className="text-sm font-medium">Waiting</span>
                 </div>
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />

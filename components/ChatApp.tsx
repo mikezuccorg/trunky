@@ -9,7 +9,7 @@ import { ThreadTree } from '@/components/threading/ThreadTree';
 import { ConversationSelector } from '@/components/threading/ConversationSelector';
 import { ApiKeyModal } from '@/components/settings/ApiKeyModal';
 import { useThreads } from '@/hooks/useThreads';
-import { Network, Key, Plus, FolderOpen } from 'lucide-react';
+import { Network, Key, Plus, FolderOpen, AlertCircle } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
@@ -146,7 +146,10 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
           {/* Conjoined conversation and threads buttons */}
           <div className="flex items-center">
             <button
-              onClick={() => setShowConversationSelector(!showConversationSelector)}
+              onClick={() => {
+                setShowConversationSelector(!showConversationSelector);
+                setShowThreadTree(false);
+              }}
               className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-l-md hover:bg-surface-2 transition-colors"
             >
               <FolderOpen size={14} />
@@ -154,7 +157,10 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
             </button>
             <div className="h-6 w-px bg-border" />
             <button
-              onClick={() => setShowThreadTree(!showThreadTree)}
+              onClick={() => {
+                setShowThreadTree(!showThreadTree);
+                setShowConversationSelector(false);
+              }}
               className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-l-0 border-border rounded-r-md hover:bg-surface-2 transition-colors"
             >
               <Network size={14} />
@@ -162,13 +168,23 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
             </button>
           </div>
         </div>
-        <button
-          onClick={() => setShowApiKeyModal(true)}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
-        >
-          <Key size={14} />
-          API Key
-        </button>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/mikezuccorg/trunky/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          >
+            Report Issues
+          </a>
+          <button
+            onClick={() => setShowApiKeyModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
+          >
+            <Key size={14} />
+            API Key
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-hidden relative">
