@@ -70,10 +70,10 @@ export async function POST(req: NextRequest) {
           }
 
           controller.close();
-        } catch (error: any) {
+        } catch (error) {
           console.error('Stream error:', error);
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ error: error.message || 'Stream error' })}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({ error: error instanceof Error ? error.message : 'Stream error' })}\n\n`)
           );
           controller.close();
         }
@@ -87,14 +87,17 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Chat API error:', error);
+    const statusCode = typeof error === 'object' && error !== null && 'status' in error
+      ? (error.status as number)
+      : 500;
     return new Response(
       JSON.stringify({
-        error: error.message || 'Failed to process chat request',
+        error: error instanceof Error ? error.message : 'Failed to process chat request',
       }),
       {
-        status: error.status || 500,
+        status: statusCode,
         headers: { 'Content-Type': 'application/json' },
       }
     );

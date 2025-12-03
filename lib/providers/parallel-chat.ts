@@ -33,10 +33,10 @@ export class ParallelChatProvider implements BaseProvider {
         };
         return;
       }
-    } catch (error: any) {
+    } catch (error) {
       yield {
         type: 'error',
-        data: error.message || 'Failed to connect to Parallel API',
+        data: error instanceof Error ? error.message : 'Failed to connect to Parallel API',
       };
       return;
     }
@@ -82,7 +82,7 @@ export class ParallelChatProvider implements BaseProvider {
               if (parsed.citations && Array.isArray(parsed.citations)) {
                 yield { type: 'citation', data: parsed.citations };
               }
-            } catch (e) {
+            } catch {
               // Skip malformed JSON
             }
           }
@@ -90,10 +90,10 @@ export class ParallelChatProvider implements BaseProvider {
       }
 
       yield { type: 'done', data: null };
-    } catch (error: any) {
+    } catch (error) {
       yield {
         type: 'error',
-        data: error.message || 'Stream reading error',
+        data: error instanceof Error ? error.message : 'Stream reading error',
       };
     }
   }

@@ -78,7 +78,7 @@ export function ThreadMinimap({
       let codeBlockStart = -1;
       let lineCount = 0;
 
-      contentLines.forEach((line, idx) => {
+      contentLines.forEach((line) => {
         if (line.trim().startsWith('```')) {
           if (!inCodeBlock) {
             // Start of code block

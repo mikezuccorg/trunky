@@ -1,8 +1,14 @@
-import { ChatMessage } from '@/types';
+import { ChatMessage, Citation } from '@/types';
+
+export interface ProgressData {
+  taskId: string;
+  progress: number;
+  status: string;
+}
 
 export interface StreamChunk {
   type: 'text' | 'thinking' | 'citation' | 'progress' | 'error' | 'done';
-  data: any;
+  data: string | Citation[] | ProgressData | null;
 }
 
 export interface BaseProvider {
@@ -18,5 +24,5 @@ export interface ProviderOptions {
   model?: string;
   maxTokens?: number;
   extendedThinking?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }

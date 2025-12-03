@@ -7,7 +7,7 @@ export class ParallelResearchProvider implements BaseProvider {
   async *sendMessage(
     messages: ChatMessage[],
     apiKey: string,
-    options: ProviderOptions
+    _options: ProviderOptions
   ): AsyncGenerator<StreamChunk> {
     // Step 1: Submit research task
     let submitResponse;
@@ -35,10 +35,10 @@ export class ParallelResearchProvider implements BaseProvider {
         };
         return;
       }
-    } catch (error: any) {
+    } catch (error) {
       yield {
         type: 'error',
-        data: error.message || 'Failed to connect to Parallel Deep Research API',
+        data: error instanceof Error ? error.message : 'Failed to connect to Parallel Deep Research API',
       };
       return;
     }
@@ -46,7 +46,7 @@ export class ParallelResearchProvider implements BaseProvider {
     let taskData;
     try {
       taskData = await submitResponse.json();
-    } catch (error: any) {
+    } catch {
       yield {
         type: 'error',
         data: 'Failed to parse task submission response',
@@ -93,7 +93,7 @@ export class ParallelResearchProvider implements BaseProvider {
           };
           return;
         }
-      } catch (error: any) {
+      } catch {
         // Retry on network errors
         continue;
       }
@@ -101,7 +101,7 @@ export class ParallelResearchProvider implements BaseProvider {
       let status;
       try {
         status = await statusResponse.json();
-      } catch (error: any) {
+      } catch {
         // Retry on parse errors
         continue;
       }

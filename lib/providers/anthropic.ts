@@ -12,7 +12,10 @@ export class AnthropicProvider implements BaseProvider {
   ): AsyncGenerator<StreamChunk> {
     const anthropic = new Anthropic({ apiKey });
 
-    const streamOptions: any = {
+    // Build stream options with proper typing
+    const streamOptions: Anthropic.MessageStreamParams & {
+      thinking?: { type: 'enabled'; budget_tokens: number };
+    } = {
       model: options.model || 'claude-haiku-4-5-20251001',
       max_tokens: options.maxTokens || 4096,
       messages,
@@ -34,10 +37,10 @@ export class AnthropicProvider implements BaseProvider {
     let stream;
     try {
       stream = await anthropic.messages.stream(streamOptions);
-    } catch (error: any) {
+    } catch (error) {
       yield {
         type: 'error',
-        data: error.message || 'Failed to start chat stream',
+        data: error instanceof Error ? error.message : 'Failed to start chat stream',
       };
       return;
     }
@@ -52,11 +55,15 @@ export class AnthropicProvider implements BaseProvider {
           };
         }
         // Handle thinking deltas (extended thinking)
-        else if (chunk.type === 'content_block_delta' && (chunk.delta as any).type === 'thinking_delta') {
-          yield {
-            type: 'thinking',
-            data: (chunk.delta as any).thinking,
-          };
+        // Note: thinking_delta is not in official SDK types but is supported by the API
+        else if (chunk.type === 'content_block_delta') {
+          const delta = chunk.delta as { type: string; thinking?: string };
+          if (delta.type === 'thinking_delta' && delta.thinking) {
+            yield {
+              type: 'thinking',
+              data: delta.thinking,
+            };
+          }
         }
         // Handle content block start markers
         else if (chunk.type === 'content_block_start') {
@@ -71,10 +78,10 @@ export class AnthropicProvider implements BaseProvider {
       }
 
       yield { type: 'done', data: null };
-    } catch (error: any) {
+    } catch (error) {
       yield {
         type: 'error',
-        data: error.message || 'Stream error occurred',
+        data: error instanceof Error ? error.message : 'Stream error occurred',
       };
     }
   }
