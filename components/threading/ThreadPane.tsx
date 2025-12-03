@@ -6,6 +6,7 @@ import { ChatInterface } from '@/components/chat/ChatInterface';
 interface ThreadPaneProps {
   thread: Thread;
   apiKey: string;
+  parallelApiKey?: string;
   isMainThread: boolean;
   onUpdateThread: (thread: Thread) => void;
   onClose?: () => void;
@@ -18,6 +19,7 @@ interface ThreadPaneProps {
 export function ThreadPane({
   thread,
   apiKey,
+  parallelApiKey,
   onUpdateThread,
   onClose,
   onTextSelect,
@@ -30,6 +32,7 @@ export function ThreadPane({
       <ChatInterface
         thread={thread}
         apiKey={apiKey}
+        parallelApiKey={parallelApiKey}
         onUpdateThread={onUpdateThread}
         onTextSelect={onTextSelect}
         childThreads={childThreads}

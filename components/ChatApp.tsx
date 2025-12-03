@@ -13,10 +13,11 @@ import { Network, Key, Plus, FolderOpen } from 'lucide-react';
 
 interface ChatAppProps {
   apiKey: string;
-  onUpdateApiKey: (newKey: string) => void;
+  parallelApiKey: string;
+  onUpdateApiKey: (anthropicKey: string, parallelKey: string) => void;
 }
 
-export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
+export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps) {
   const [conversationState, setConversationState] = useState<ConversationState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{
     text: string;
@@ -175,6 +176,7 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
           threads={threading.activeThreads}
           mainThreadId={conversationState.mainThreadId}
           apiKey={apiKey}
+          parallelApiKey={parallelApiKey}
           onUpdateThread={threading.updateThread}
           onCloseThread={threading.closeThread}
           onTextSelect={handleTextSelect}
@@ -212,6 +214,7 @@ export function ChatApp({ apiKey, onUpdateApiKey }: ChatAppProps) {
         {showApiKeyModal && (
           <ApiKeyModal
             currentApiKey={apiKey}
+            currentParallelApiKey={parallelApiKey}
             onSave={onUpdateApiKey}
             onClose={() => setShowApiKeyModal(false)}
           />

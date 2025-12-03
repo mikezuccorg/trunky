@@ -3,10 +3,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Message as MessageType } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
-import { Bot, Brain, ChevronDown } from 'lucide-react';
+import { Bot, Brain, ChevronDown, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
+import { Citations } from './Citations';
 
 interface ThreadSelection {
   threadId: string;
@@ -27,6 +28,32 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
   const isUser = message.role === 'user';
   const isInherited = message.isInherited || false;
   const [showThinking, setShowThinking] = useState(false);
+
+  const getProviderIcon = () => {
+    if (!message.provider) return <Bot size={14} />;
+
+    switch (message.provider) {
+      case 'anthropic':
+        return <Bot size={14} />;
+      case 'parallel-chat':
+        return <Zap size={14} />;
+      case 'parallel-research':
+        return <Brain size={14} />;
+    }
+  };
+
+  const getProviderLabel = () => {
+    if (!message.provider) return 'Claude';
+
+    switch (message.provider) {
+      case 'anthropic':
+        return 'Claude';
+      case 'parallel-chat':
+        return 'Parallel';
+      case 'parallel-research':
+        return 'Deep Research';
+    }
+  };
 
   const handleMouseUp = () => {
     if (onTextSelect) {
@@ -298,9 +325,14 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         {!isUser && (
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 rounded-sm flex items-center justify-center bg-surface-3 text-text-primary">
-              <Bot size={14} />
+              {getProviderIcon()}
             </div>
-            <span className="text-sm font-medium">Claude</span>
+            <span className="text-sm font-medium">{getProviderLabel()}</span>
+            {message.provider && message.provider !== 'anthropic' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200">
+                {getProviderLabel()}
+              </span>
+            )}
             {isInherited && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-text-secondary border border-border">
                 From parent thread
@@ -345,6 +377,11 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
         }`}>
           {renderContent}
         </div>
+
+        {/* Citations Display */}
+        {!isUser && message.metadata?.citations && message.metadata.citations.length > 0 && (
+          <Citations citations={message.metadata.citations} />
+        )}
 
         {message.timestamp && (
           <div className="mt-2 text-xs text-text-secondary">

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, KeyboardEvent } from 'react';
-import { Send, ChevronDown, Brain } from 'lucide-react';
-import { ChatSettings, CLAUDE_MODELS, ClaudeModel } from '@/types';
+import { Send, Brain } from 'lucide-react';
+import { ChatSettings, AIProvider } from '@/types';
+import { ProviderSelector } from './ProviderSelector';
 
 interface InputAreaProps {
   onSend: (message: string) => void;
@@ -10,11 +11,20 @@ interface InputAreaProps {
   placeholder?: string;
   settings: ChatSettings;
   onSettingsChange: (settings: ChatSettings) => void;
+  hasAnthropicKey: boolean;
+  hasParallelKey: boolean;
 }
 
-export function InputArea({ onSend, disabled, placeholder = 'Type a message...', settings, onSettingsChange }: InputAreaProps) {
+export function InputArea({
+  onSend,
+  disabled,
+  placeholder = 'Type a message...',
+  settings,
+  onSettingsChange,
+  hasAnthropicKey,
+  hasParallelKey,
+}: InputAreaProps) {
   const [input, setInput] = useState('');
-  const [showModelMenu, setShowModelMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
@@ -44,19 +54,25 @@ export function InputArea({ onSend, disabled, placeholder = 'Type a message...',
     }
   };
 
-  const handleModelChange = (model: ClaudeModel) => {
-    onSettingsChange({ ...settings, model });
-    setShowModelMenu(false);
+  const handleProviderChange = (provider: AIProvider, model: string) => {
+    onSettingsChange({
+      ...settings,
+      provider,
+      model,
+      // Disable extended thinking for non-Anthropic providers
+      extendedThinking: provider === 'anthropic' ? settings.extendedThinking : false,
+    });
   };
 
   const handleThinkingToggle = () => {
     onSettingsChange({ ...settings, extendedThinking: !settings.extendedThinking });
   };
 
-  const currentModelName = CLAUDE_MODELS[settings.model as ClaudeModel] || settings.model;
-  const supportsThinking = settings.model.includes('claude-opus-4') ||
+  const supportsThinking = settings.provider === 'anthropic' && (
+    settings.model.includes('claude-opus-4') ||
     settings.model.includes('claude-sonnet-4') ||
-    settings.model.includes('claude-3-7');
+    settings.model.includes('claude-3-7')
+  );
 
   return (
     <div className="border-t border-border bg-surface px-6 py-4">
@@ -82,43 +98,19 @@ export function InputArea({ onSend, disabled, placeholder = 'Type a message...',
           </button>
         </div>
 
-        {/* Model Settings Row */}
+        {/* Settings Row */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
-            {/* Model Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowModelMenu(!showModelMenu)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-text-secondary hover:text-text-primary border border-border rounded hover:bg-surface-2 transition-colors"
-              >
-                {currentModelName}
-                <ChevronDown size={10} className={`transition-transform ${showModelMenu ? 'rotate-180' : ''}`} />
-              </button>
+            {/* Provider Selector */}
+            <ProviderSelector
+              currentProvider={settings.provider}
+              currentModel={settings.model}
+              onProviderChange={handleProviderChange}
+              hasAnthropicKey={hasAnthropicKey}
+              hasParallelKey={hasParallelKey}
+            />
 
-              {showModelMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowModelMenu(false)}
-                  />
-                  <div className="absolute left-0 bottom-full mb-1 w-48 bg-white border border-border rounded-lg shadow-lg z-20 py-1">
-                    {Object.entries(CLAUDE_MODELS).map(([modelId, modelName]) => (
-                      <button
-                        key={modelId}
-                        onClick={() => handleModelChange(modelId as ClaudeModel)}
-                        className={`w-full text-left px-3 py-2 text-xs hover:bg-surface transition-colors ${
-                          settings.model === modelId ? 'bg-surface-2 font-medium' : ''
-                        }`}
-                      >
-                        {modelName}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Extended Thinking Toggle */}
+            {/* Extended Thinking Toggle - only show for Anthropic */}
             {supportsThinking && (
               <button
                 onClick={handleThinkingToggle}

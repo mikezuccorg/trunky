@@ -1,8 +1,10 @@
-import { ConversationState, Thread, Message } from '@/types';
+import { ConversationState, Thread, Message, AIProvider } from '@/types';
 
 const STORAGE_KEY = 'trunky_conversations';
 const API_KEY_STORAGE = 'trunky_api_key';
+const PARALLEL_API_KEY_STORAGE = 'trunky_parallel_api_key';
 const LAST_MODEL_STORAGE = 'trunky_last_model';
+const LAST_PROVIDER_STORAGE = 'trunky_last_provider';
 
 export const storage = {
   saveConversations: (state: ConversationState): void => {
@@ -48,6 +50,49 @@ export const storage = {
     }
   },
 
+  saveParallelApiKey: (apiKey: string): void => {
+    try {
+      localStorage.setItem(PARALLEL_API_KEY_STORAGE, apiKey);
+    } catch (error) {
+      console.error('Failed to save Parallel API key:', error);
+    }
+  },
+
+  loadParallelApiKey: (): string | null => {
+    try {
+      return localStorage.getItem(PARALLEL_API_KEY_STORAGE);
+    } catch (error) {
+      console.error('Failed to load Parallel API key:', error);
+      return null;
+    }
+  },
+
+  clearParallelApiKey: (): void => {
+    try {
+      localStorage.removeItem(PARALLEL_API_KEY_STORAGE);
+    } catch (error) {
+      console.error('Failed to clear Parallel API key:', error);
+    }
+  },
+
+  saveLastProvider: (provider: AIProvider): void => {
+    try {
+      localStorage.setItem(LAST_PROVIDER_STORAGE, provider);
+    } catch (error) {
+      console.error('Failed to save last provider:', error);
+    }
+  },
+
+  loadLastProvider: (): AIProvider => {
+    try {
+      const provider = localStorage.getItem(LAST_PROVIDER_STORAGE);
+      return (provider as AIProvider) || 'anthropic';
+    } catch (error) {
+      console.error('Failed to load last provider:', error);
+      return 'anthropic';
+    }
+  },
+
   saveLastModel: (model: string): void => {
     try {
       localStorage.setItem(LAST_MODEL_STORAGE, model);
@@ -69,7 +114,9 @@ export const storage = {
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(API_KEY_STORAGE);
+      localStorage.removeItem(PARALLEL_API_KEY_STORAGE);
       localStorage.removeItem(LAST_MODEL_STORAGE);
+      localStorage.removeItem(LAST_PROVIDER_STORAGE);
     } catch (error) {
       console.error('Failed to clear storage:', error);
     }

@@ -5,17 +5,20 @@ import { X } from 'lucide-react';
 
 interface ApiKeyModalProps {
   currentApiKey?: string;
-  onSave: (apiKey: string) => void;
+  currentParallelApiKey?: string;
+  onSave: (anthropicKey: string, parallelKey: string) => void;
   onClose: () => void;
 }
 
-export function ApiKeyModal({ currentApiKey, onSave, onClose }: ApiKeyModalProps) {
+export function ApiKeyModal({ currentApiKey, currentParallelApiKey, onSave, onClose }: ApiKeyModalProps) {
   const [apiKey, setApiKey] = useState(currentApiKey || '');
-  const [showKey, setShowKey] = useState(false);
+  const [parallelApiKey, setParallelApiKey] = useState(currentParallelApiKey || '');
+  const [showKeys, setShowKeys] = useState({ anthropic: false, parallel: false });
 
   const handleSave = () => {
-    if (apiKey.trim()) {
-      onSave(apiKey.trim());
+    // At least one key must be provided
+    if (apiKey.trim() || parallelApiKey.trim()) {
+      onSave(apiKey.trim(), parallelApiKey.trim());
       onClose();
     }
   };
@@ -35,45 +38,67 @@ export function ApiKeyModal({ currentApiKey, onSave, onClose }: ApiKeyModalProps
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 space-y-4">
+        <div className="px-6 py-6 space-y-6">
+          {/* Anthropic API Key */}
           <div className="space-y-2">
             <label htmlFor="apiKey" className="text-sm font-medium block">
-              Anthropic API Key
+              Anthropic API Key (Claude)
             </label>
             <div className="relative">
               <input
                 id="apiKey"
-                type={showKey ? 'text' : 'password'}
+                type={showKeys.anthropic ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                 placeholder="sk-ant-..."
                 className="w-full px-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent bg-white pr-20"
               />
               <button
                 type="button"
-                onClick={() => setShowKey(!showKey)}
+                onClick={() => setShowKeys(prev => ({ ...prev, anthropic: !prev.anthropic }))}
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
               >
-                {showKey ? 'Hide' : 'Show'}
+                {showKeys.anthropic ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
 
+          {/* Parallel API Key */}
+          <div className="space-y-2">
+            <label htmlFor="parallelApiKey" className="text-sm font-medium block">
+              Parallel.ai API Key
+            </label>
+            <div className="relative">
+              <input
+                id="parallelApiKey"
+                type={showKeys.parallel ? 'text' : 'password'}
+                value={parallelApiKey}
+                onChange={(e) => setParallelApiKey(e.target.value)}
+                placeholder="para-..."
+                className="w-full px-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent bg-white pr-20"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKeys(prev => ({ ...prev, parallel: !prev.parallel }))}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+              >
+                {showKeys.parallel ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-xs text-text-secondary">
+              Required for Parallel Chat and Deep Research features
+            </p>
+          </div>
+
+          {/* Security Notice */}
           <div className="bg-surface rounded-lg p-4 space-y-2">
             <p className="text-xs font-medium text-text-primary">Security Notice</p>
             <ul className="text-xs text-text-secondary space-y-1">
-              <li>• Your API key is stored locally in your browser</li>
-              <li>• It is never sent to our servers</li>
-              <li>• Only transmitted directly to Anthropic&apos;s API</li>
+              <li>• Your API keys are stored locally in your browser</li>
+              <li>• They are never sent to our servers</li>
+              <li>• Only transmitted directly to the respective AI provider APIs</li>
             </ul>
           </div>
-
-          {currentApiKey && (
-            <p className="text-xs text-text-secondary">
-              Current key: {currentApiKey.slice(0, 15)}...{currentApiKey.slice(-4)}
-            </p>
-          )}
         </div>
 
         {/* Footer */}
@@ -86,10 +111,10 @@ export function ApiKeyModal({ currentApiKey, onSave, onClose }: ApiKeyModalProps
           </button>
           <button
             onClick={handleSave}
-            disabled={!apiKey.trim()}
+            disabled={!apiKey.trim() && !parallelApiKey.trim()}
             className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
-            Save API Key
+            Save API Keys
           </button>
         </div>
       </div>

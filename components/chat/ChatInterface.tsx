@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
+import { ResearchProgress } from './ResearchProgress';
 import { useChat } from '@/hooks/useChat';
 import { storage } from '@/lib/storage';
 import { X } from 'lucide-react';
@@ -11,6 +12,7 @@ import { X } from 'lucide-react';
 interface ChatInterfaceProps {
   thread: Thread;
   apiKey: string;
+  parallelApiKey?: string;
   onUpdateThread: (thread: Thread) => void;
   onTextSelect?: (text: string, messageId: string, threadId: string) => void;
   childThreads?: Thread[]; // Child threads spawned from this thread
@@ -22,6 +24,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({
   thread,
   apiKey,
+  parallelApiKey,
   onUpdateThread,
   onTextSelect,
   childThreads = [],
@@ -38,6 +41,7 @@ export function ChatInterface({
       model: storage.loadLastModel(),
       maxTokens: 4096,
       extendedThinking: false,
+      provider: storage.loadLastProvider(),
     }
   );
 
@@ -50,6 +54,7 @@ export function ChatInterface({
       model: storage.loadLastModel(),
       maxTokens: 4096,
       extendedThinking: false,
+      provider: storage.loadLastProvider(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread.id]); // Only sync when switching threads
@@ -77,9 +82,10 @@ export function ChatInterface({
     []
   );
 
-  const { sendMessage, isLoading, error } = useChat({
+  const { sendMessage, isLoading, isResearching, researchProgress, error } = useChat({
     threadId: thread.id,
     apiKey,
+    parallelApiKey,
     settings,
     onMessage: handleMessage,
   });
@@ -99,8 +105,9 @@ export function ChatInterface({
 
   const handleSettingsChange = (newSettings: ChatSettingsType) => {
     setSettings(newSettings);
-    // Save the selected model for future use
+    // Save the selected model and provider for future use
     storage.saveLastModel(newSettings.model);
+    storage.saveLastProvider(newSettings.provider);
     // Update thread with new settings
     const updatedThread = {
       ...thread,
@@ -164,6 +171,14 @@ export function ChatInterface({
         onNavigateToThread={onNavigateToThread}
       />
 
+      {/* Research Progress */}
+      {isResearching && (
+        <ResearchProgress
+          progress={researchProgress}
+          status={messages[messages.length - 1]?.metadata?.status}
+        />
+      )}
+
       {/* Error display */}
       {error && (
         <div className="px-6 py-3 bg-red-50 border-t border-red-200">
@@ -176,9 +191,11 @@ export function ChatInterface({
       {/* Input */}
       <InputArea
         onSend={handleSend}
-        disabled={isLoading}
+        disabled={isLoading || isResearching}
         settings={settings}
         onSettingsChange={handleSettingsChange}
+        hasAnthropicKey={!!apiKey}
+        hasParallelKey={!!parallelApiKey}
       />
     </div>
   );

@@ -1,3 +1,21 @@
+// Provider types
+export type AIProvider = 'anthropic' | 'parallel-chat' | 'parallel-research';
+
+export interface Citation {
+  title: string;
+  url: string;
+  snippet?: string;
+  timestamp?: number;
+}
+
+export interface ProviderMetadata {
+  provider: AIProvider;
+  citations?: Citation[];
+  taskId?: string; // For Deep Research async tracking
+  progress?: number; // 0-100 for Deep Research progress
+  status?: 'pending' | 'running' | 'completed' | 'failed';
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -6,12 +24,15 @@ export interface Message {
   threadId: string;
   thinking?: string; // Extended thinking content (separate from main content)
   isInherited?: boolean; // Whether this message is inherited from parent thread
+  provider?: AIProvider; // AI provider used for this message
+  metadata?: ProviderMetadata; // Provider-specific metadata
 }
 
 export interface ChatSettings {
   model: string;
   maxTokens: number;
   extendedThinking: boolean;
+  provider: AIProvider; // AI provider to use
 }
 
 export interface Thread {
@@ -45,6 +66,8 @@ export interface ApiChatRequest {
   model?: string;
   maxTokens?: number;
   extendedThinking?: boolean;
+  provider: AIProvider; // AI provider to use
+  parallelApiKey?: string; // Parallel.ai API key
 }
 
 export const CLAUDE_MODELS = {
@@ -58,3 +81,14 @@ export const CLAUDE_MODELS = {
 } as const;
 
 export type ClaudeModel = keyof typeof CLAUDE_MODELS;
+
+export const PARALLEL_CHAT_MODELS = {
+  'speed': 'Speed',
+} as const;
+
+export type ParallelChatModel = keyof typeof PARALLEL_CHAT_MODELS;
+
+export const PARALLEL_RESEARCH_CONFIG = {
+  name: 'Parallel Deep Research',
+  description: 'Comprehensive research with citations (5s-30min)',
+} as const;

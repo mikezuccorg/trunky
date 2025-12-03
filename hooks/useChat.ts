@@ -1,28 +1,45 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Message, ChatMessage, ChatSettings } from '@/types';
+import { Message, ChatMessage, ChatSettings, Citation } from '@/types';
 import { generateId } from '@/lib/storage';
 
 interface UseChatOptions {
   threadId: string;
   apiKey: string;
+  parallelApiKey?: string;
   settings: ChatSettings;
   onMessage?: (message: Message, streaming?: boolean) => void;
 }
 
-export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOptions) {
+export function useChat({ threadId, apiKey, parallelApiKey, settings, onMessage }: UseChatOptions) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchProgress, setResearchProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(
     async (content: string, messages: Message[]): Promise<Message | null> => {
-      if (!content.trim() || !apiKey) {
+      if (!content.trim()) {
+        return null;
+      }
+
+      // Check if we have the required API key for the selected provider
+      const requiresKey = settings.provider === 'anthropic' ? apiKey : parallelApiKey;
+      if (!requiresKey) {
+        setError(`API key required for ${settings.provider}`);
         return null;
       }
 
       setIsLoading(true);
       setError(null);
+
+      // Track if this is deep research
+      const isDeepResearch = settings.provider === 'parallel-research';
+      if (isDeepResearch) {
+        setIsResearching(true);
+        setResearchProgress(0);
+      }
 
       // Create user message
       const userMessage: Message = {
@@ -31,6 +48,7 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
         content: content.trim(),
         timestamp: Date.now(),
         threadId,
+        provider: settings.provider,
       };
 
       onMessage?.(userMessage, false);
@@ -56,9 +74,11 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
           body: JSON.stringify({
             messages: apiMessages,
             apiKey,
+            parallelApiKey,
             model: settings.model,
             maxTokens: settings.maxTokens,
             extendedThinking: settings.extendedThinking,
+            provider: settings.provider,
           }),
         });
 
@@ -76,7 +96,8 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
         const decoder = new TextDecoder();
         let assistantContent = '';
         let thinkingContent = '';
-        let isInThinkingBlock = false;
+        let citations: Citation[] = [];
+        let taskId: string | undefined;
 
         const assistantMessage: Message = {
           id: generateId(),
@@ -84,6 +105,11 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
           content: '',
           timestamp: Date.now(),
           threadId,
+          provider: settings.provider,
+          metadata: {
+            provider: settings.provider,
+            citations: [],
+          },
         };
 
         while (true) {
@@ -106,35 +132,49 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
 
               try {
                 const parsed = JSON.parse(data);
+
                 if (parsed.error) {
-                  // Handle error from stream
                   throw new Error(parsed.error);
                 }
-                // Handle thinking block start/end markers
-                if (parsed.thinkingStart) {
-                  isInThinkingBlock = true;
-                } else if (parsed.textStart) {
-                  isInThinkingBlock = false;
-                }
+
                 // Handle thinking content
-                else if (parsed.thinking) {
+                if (parsed.thinking) {
                   thinkingContent += parsed.thinking;
                   assistantMessage.thinking = thinkingContent;
                   onMessage?.({ ...assistantMessage }, true);
                 }
+
                 // Handle regular text content
-                else if (parsed.text) {
+                if (parsed.text) {
                   assistantContent += parsed.text;
                   assistantMessage.content = assistantContent;
-                  // Trigger re-render by calling onMessage with updated message
+                  onMessage?.({ ...assistantMessage }, true);
+                }
+
+                // Handle citations
+                if (parsed.citations) {
+                  citations = [...citations, ...parsed.citations];
+                  if (assistantMessage.metadata) {
+                    assistantMessage.metadata.citations = citations;
+                  }
+                  onMessage?.({ ...assistantMessage }, true);
+                }
+
+                // Handle Deep Research progress
+                if (parsed.progress) {
+                  setResearchProgress(parsed.progress.progress || 0);
+                  taskId = parsed.progress.taskId;
+                  if (assistantMessage.metadata) {
+                    assistantMessage.metadata.taskId = taskId;
+                    assistantMessage.metadata.progress = parsed.progress.progress;
+                    assistantMessage.metadata.status = parsed.progress.status;
+                  }
                   onMessage?.({ ...assistantMessage }, true);
                 }
               } catch (e: any) {
-                // If it's a structured error, throw it
                 if (e.message && !e.message.includes('JSON')) {
                   throw e;
                 }
-                // Otherwise ignore parse errors for incomplete chunks
               }
             }
           }
@@ -144,20 +184,24 @@ export function useChat({ threadId, apiKey, settings, onMessage }: UseChatOption
         onMessage?.({ ...assistantMessage }, false);
 
         setIsLoading(false);
+        setIsResearching(false);
         return assistantMessage;
       } catch (err: any) {
         console.error('Chat error:', err);
         setError(err.message || 'Failed to send message');
         setIsLoading(false);
+        setIsResearching(false);
         return null;
       }
     },
-    [apiKey, threadId, settings, onMessage]
+    [apiKey, parallelApiKey, threadId, settings, onMessage]
   );
 
   return {
     sendMessage,
     isLoading,
+    isResearching,
+    researchProgress,
     error,
   };
 }

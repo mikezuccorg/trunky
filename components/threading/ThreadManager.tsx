@@ -7,6 +7,7 @@ interface ThreadManagerProps {
   threads: Thread[];
   mainThreadId: string;
   apiKey: string;
+  parallelApiKey?: string;
   onUpdateThread: (thread: Thread) => void;
   onCloseThread: (threadId: string) => void;
   onTextSelect: (text: string, messageId: string, threadId: string) => void;
@@ -18,6 +19,7 @@ export function ThreadManager({
   threads,
   mainThreadId,
   apiKey,
+  parallelApiKey,
   onUpdateThread,
   onCloseThread,
   onTextSelect,
@@ -51,6 +53,7 @@ export function ThreadManager({
             <ThreadPane
               thread={thread}
               apiKey={apiKey}
+              parallelApiKey={parallelApiKey}
               isMainThread={thread.id === mainThreadId}
               onUpdateThread={onUpdateThread}
               onClose={
