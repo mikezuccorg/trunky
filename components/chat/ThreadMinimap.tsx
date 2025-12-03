@@ -324,10 +324,10 @@ export function ThreadMinimap({
       }
 
       // Highlight code blocks with accent stripe
-      if (layout.hasCode) {
-        ctx.fillStyle = isDark ? 'rgba(168, 85, 247, 0.5)' : 'rgba(147, 51, 234, 0.4)';
-        ctx.fillRect(width - 6, layout.startY, 3, Math.min(layout.height * 0.4, layout.height - 4));
-      }
+      // if (layout.hasCode) {
+      //   ctx.fillStyle = isDark ? 'rgba(168, 85, 247, 0.5)' : 'rgba(147, 51, 234, 0.4)';
+      //   ctx.fillRect(width - 6, layout.startY, 3, Math.min(layout.height * 0.4, layout.height - 4));
+      // }
 
       // Add separator between messages
       if (index < messages.length - 1) {
