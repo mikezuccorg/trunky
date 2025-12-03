@@ -5,6 +5,12 @@ const API_KEY_STORAGE = 'trunky_api_key';
 const PARALLEL_API_KEY_STORAGE = 'trunky_parallel_api_key';
 const LAST_MODEL_STORAGE = 'trunky_last_model';
 const LAST_PROVIDER_STORAGE = 'trunky_last_provider';
+const FONT_SETTINGS_STORAGE = 'trunky_font_settings';
+
+export interface FontSettings {
+  fontSize: 'small' | 'medium' | 'large' | 'x-large';
+  fontFamily: 'system' | 'serif' | 'mono';
+}
 
 export const storage = {
   saveConversations: (state: ConversationState): void => {
@@ -107,6 +113,24 @@ export const storage = {
     } catch (error) {
       console.error('Failed to load last model:', error);
       return 'claude-haiku-4-5-20251001';
+    }
+  },
+
+  saveFontSettings: (settings: FontSettings): void => {
+    try {
+      localStorage.setItem(FONT_SETTINGS_STORAGE, JSON.stringify(settings));
+    } catch (error) {
+      console.error('Failed to save font settings:', error);
+    }
+  },
+
+  loadFontSettings: (): FontSettings => {
+    try {
+      const stored = localStorage.getItem(FONT_SETTINGS_STORAGE);
+      return stored ? JSON.parse(stored) : { fontSize: 'medium', fontFamily: 'system' };
+    } catch (error) {
+      console.error('Failed to load font settings:', error);
+      return { fontSize: 'medium', fontFamily: 'system' };
     }
   },
 

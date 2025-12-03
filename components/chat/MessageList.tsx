@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Message as MessageType, Thread } from '@/types';
+import { FontSettings } from '@/lib/storage';
 import { Message } from './Message';
 import { ThreadMinimap } from './ThreadMinimap';
 import { Bot } from 'lucide-react';
@@ -20,9 +21,10 @@ interface MessageListProps {
   highlightedText?: string;
   allThreads?: Thread[]; // All threads to find child threads
   onNavigateToThread?: (threadId: string) => void;
+  fontSettings: FontSettings;
 }
 
-export function MessageList({ messages, onTextSelect, isLoading, highlightMessageId, highlightedText, allThreads = [], onNavigateToThread }: MessageListProps) {
+export function MessageList({ messages, onTextSelect, isLoading, highlightMessageId, highlightedText, allThreads = [], onNavigateToThread, fontSettings }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
@@ -146,6 +148,7 @@ export function MessageList({ messages, onTextSelect, isLoading, highlightMessag
                   highlightedText={isHighlighted ? highlightedText : undefined}
                   childThreads={childThreads}
                   onNavigateToThread={onNavigateToThread}
+                  fontSettings={fontSettings}
                 />
               </div>
             );

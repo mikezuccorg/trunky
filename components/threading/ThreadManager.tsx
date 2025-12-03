@@ -1,6 +1,7 @@
 'use client';
 
 import { Thread } from '@/types';
+import { FontSettings } from '@/lib/storage';
 import { ThreadPane } from './ThreadPane';
 
 interface ThreadManagerProps {
@@ -13,6 +14,7 @@ interface ThreadManagerProps {
   onTextSelect: (text: string, messageId: string, threadId: string) => void;
   allThreads?: Thread[]; // All threads for finding child thread selections
   onNavigateToThread?: (threadId: string) => void;
+  fontSettings: FontSettings;
 }
 
 export function ThreadManager({
@@ -25,6 +27,7 @@ export function ThreadManager({
   onTextSelect,
   allThreads = [],
   onNavigateToThread,
+  fontSettings,
 }: ThreadManagerProps) {
   // Show only 2 threads: parent (left) and current (right)
   // This creates a clear hierarchical view
@@ -65,6 +68,7 @@ export function ThreadManager({
               childThreads={getChildThreads(thread.id, threads)}
               allThreads={allThreads}
               onNavigateToThread={onNavigateToThread}
+              fontSettings={fontSettings}
             />
           </div>
         );

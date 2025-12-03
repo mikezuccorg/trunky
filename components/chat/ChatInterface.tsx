@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Message, Thread, ChatSettings as ChatSettingsType } from '@/types';
+import { FontSettings } from '@/lib/storage';
 import { MessageList } from './MessageList';
 import { InputArea } from './InputArea';
 import { ResearchProgress } from './ResearchProgress';
@@ -19,6 +20,7 @@ interface ChatInterfaceProps {
   onClose?: () => void; // Close button handler for child threads
   allThreads?: Thread[]; // All threads for finding child thread selections
   onNavigateToThread?: (threadId: string) => void;
+  fontSettings: FontSettings;
 }
 
 export function ChatInterface({
@@ -31,6 +33,7 @@ export function ChatInterface({
   onClose,
   allThreads = [],
   onNavigateToThread,
+  fontSettings,
 }: ChatInterfaceProps) {
   // Filter out inherited messages from parent threads - users can view them on the left
   const [messages, setMessages] = useState<Message[]>(
@@ -169,6 +172,7 @@ export function ChatInterface({
         highlightedText={highlightInfo.text}
         allThreads={allThreads}
         onNavigateToThread={onNavigateToThread}
+        fontSettings={fontSettings}
       />
 
       {/* Research Progress */}

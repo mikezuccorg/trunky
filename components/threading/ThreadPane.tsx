@@ -1,6 +1,7 @@
 'use client';
 
 import { Thread } from '@/types';
+import { FontSettings } from '@/lib/storage';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 
 interface ThreadPaneProps {
@@ -14,6 +15,7 @@ interface ThreadPaneProps {
   childThreads?: Thread[];
   allThreads?: Thread[];
   onNavigateToThread?: (threadId: string) => void;
+  fontSettings: FontSettings;
 }
 
 export function ThreadPane({
@@ -26,6 +28,7 @@ export function ThreadPane({
   childThreads = [],
   allThreads = [],
   onNavigateToThread,
+  fontSettings,
 }: ThreadPaneProps) {
   return (
     <div className="flex flex-col h-full border-r border-border last:border-r-0 animate-in slide-in-from-right duration-300">
@@ -39,6 +42,7 @@ export function ThreadPane({
         onClose={onClose}
         allThreads={allThreads}
         onNavigateToThread={onNavigateToThread}
+        fontSettings={fontSettings}
       />
     </div>
   );

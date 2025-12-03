@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { Message as MessageType } from '@/types';
+import { FontSettings } from '@/lib/storage';
 import { formatTimestamp } from '@/lib/utils';
 import { Bot, Brain, ChevronDown, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -22,12 +23,39 @@ interface MessageProps {
   highlightedText?: string;
   childThreads?: ThreadSelection[]; // Threads that branch from this message
   onNavigateToThread?: (threadId: string) => void;
+  fontSettings: FontSettings;
 }
 
-export function Message({ message, onTextSelect, isHighlighted, highlightedText, childThreads = [], onNavigateToThread }: MessageProps) {
+export function Message({ message, onTextSelect, isHighlighted, highlightedText, childThreads = [], onNavigateToThread, fontSettings }: MessageProps) {
   const isUser = message.role === 'user';
   const isInherited = message.isInherited || false;
   const [showThinking, setShowThinking] = useState(false);
+
+  // Get font size class
+  const getFontSizeClass = () => {
+    switch (fontSettings.fontSize) {
+      case 'small':
+        return 'text-[13px]';
+      case 'medium':
+        return 'text-[15px]';
+      case 'large':
+        return 'text-[17px]';
+      case 'x-large':
+        return 'text-[19px]';
+    }
+  };
+
+  // Get font family class
+  const getFontFamilyClass = () => {
+    switch (fontSettings.fontFamily) {
+      case 'system':
+        return '';
+      case 'serif':
+        return 'font-serif';
+      case 'mono':
+        return 'font-mono';
+    }
+  };
 
   const getProviderIcon = () => {
     if (!message.provider) return <Bot size={14} />;
@@ -452,7 +480,7 @@ export function Message({ message, onTextSelect, isHighlighted, highlightedText,
           </div>
         )}
 
-        <div className={`text-[15px] leading-relaxed break-words ${
+        <div className={`${getFontSizeClass()} ${getFontFamilyClass()} leading-relaxed break-words ${
           isUser ? 'text-text-primary whitespace-pre-wrap' : 'text-text-primary markdown-content'
         }`}>
           {renderContent}

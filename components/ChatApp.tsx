@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { storage, createThread } from '@/lib/storage';
+import { storage, createThread, FontSettings as FontSettingsType } from '@/lib/storage';
 import { ConversationState, Thread } from '@/types';
 import { ThreadManager } from '@/components/threading/ThreadManager';
 import { ThreadSelector } from '@/components/chat/ThreadSelector';
 import { ThreadTree } from '@/components/threading/ThreadTree';
 import { ConversationSelector } from '@/components/threading/ConversationSelector';
 import { ApiKeyModal } from '@/components/settings/ApiKeyModal';
+import { FontSettings } from '@/components/settings/FontSettings';
 import { useThreads } from '@/hooks/useThreads';
 import { Network, Key, Plus, FolderOpen, AlertCircle } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
   const [showThreadTree, setShowThreadTree] = useState(false);
   const [showConversationSelector, setShowConversationSelector] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [fontSettings, setFontSettings] = useState<FontSettingsType>(() => storage.loadFontSettings());
 
   // Initialize conversation state
   useEffect(() => {
@@ -177,6 +179,10 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
           >
             Report Issues
           </a>
+          <FontSettings
+            currentSettings={fontSettings}
+            onSettingsChange={setFontSettings}
+          />
           <button
             onClick={() => setShowApiKeyModal(true)}
             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-surface-2 transition-colors"
@@ -198,6 +204,7 @@ export function ChatApp({ apiKey, parallelApiKey, onUpdateApiKey }: ChatAppProps
           onTextSelect={handleTextSelect}
           allThreads={currentConversationThreads}
           onNavigateToThread={threading.navigateToThread}
+          fontSettings={fontSettings}
         />
 
         {pendingSelection && (
