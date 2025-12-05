@@ -127,10 +127,10 @@ export const storage = {
   loadFontSettings: (): FontSettings => {
     try {
       const stored = localStorage.getItem(FONT_SETTINGS_STORAGE);
-      return stored ? JSON.parse(stored) : { fontSize: 'medium', fontFamily: 'system' };
+      return stored ? JSON.parse(stored) : { fontSize: 'large', fontFamily: 'serif' };
     } catch (error) {
       console.error('Failed to load font settings:', error);
-      return { fontSize: 'medium', fontFamily: 'system' };
+      return { fontSize: 'large', fontFamily: 'serif' };
     }
   },
 
